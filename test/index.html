@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Tester - MyFinanceFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        [v-cloak] { display: none; }
+        .toast-enter-active, .toast-leave-active { transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .toast-enter-from, .toast-leave-to { opacity: 0; transform: translate(-50%, -40%) scale(0.85); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+<div id="app" v-cloak class="w-full max-w-md p-6">
+    <!-- Notifikasi -->
+    <transition name="toast">
+        <div v-if="notif.show" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 flex gap-4 min-w-[300px]" :class="notif.type === 'success' ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-rose-500'">
+            <div :class="notif.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'" class="p-2 rounded-full h-fit"><span class="text-lg leading-none block">{{ notif.type === 'success' ? '✅' : '⚠️' }}</span></div>
+            <div>
+                <h4 class="text-sm font-extrabold text-slate-800">{{ notif.title }}</h4>
+                <p class="text-xs text-slate-500 mt-1 font-medium">{{ notif.message }}</p>
+            </div>
+        </div>
+    </transition>
+
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 relative overflow-hidden">
+        <div class="absolute -top-3 -right-2 bg-gradient-to-r from-orange-400 to-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md animate-pulse">TESTER VERSION</div>
+        
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold text-blue-600 mb-2">Login Tester</h1>
+            <p class="text-sm text-slate-500 font-medium">Masuk untuk menguji fitur MyFinanceFlow.</p>
+        </div>
+
+        <form @submit.prevent="prosesLogin" class="space-y-5">
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 ml-1 mb-1 tracking-widest">Username / Token</label>
+                <input type="text" v-model="formLogin.username" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium text-slate-700">
+            </div>
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 ml-1 mb-1 tracking-widest">Password</label>
+                <input type="password" v-model="formLogin.password" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium text-slate-700">
+            </div>
+            <button type="submit" :disabled="isLoading" class="w-full bg-blue-600 text-white font-extrabold py-3.5 rounded-xl hover:bg-blue-700 transition-all shadow-md flex justify-center items-center gap-2 mt-4">
+                <span v-if="isLoading" class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+                {{ isLoading ? 'Memverifikasi...' : 'Masuk ke Dashboard' }}
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, onMounted } = Vue;
+
+createApp({
+    setup() {
+        const API_URL = "https://script.google.com/macros/s/AKfycbwtAqt1Tce5ESpSEP5vowug9aDhCIUaBHWuembT0moeJatP3jgZ4gbU716lH3P3iNMfSg/exec"; // <-- GANTI DENGAN URL API ANDA
+
+        const formLogin = ref({ username: '', password: '' });
+        const isLoading = ref(false);
+        const notif = ref({ show: false, title: '', message: '', type: 'success' });
+
+        const showNotif = (title, msg, type = 'success') => {
+            notif.value = { show: true, title, message: msg, type };
+            setTimeout(() => { notif.value.show = false; }, 3000);
+        };
+
+        onMounted(() => {
+            // Jika sudah ada token, langsung lempar ke dashboard
+            if(localStorage.getItem('ff_token_tester')) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        const prosesLogin = async () => {
+            isLoading.value = true;
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'login', username: formLogin.value.username, password: formLogin.value.password })
+                });
+                const result = await res.json();
+                
+                if(result.status === 'success') {
+                    // Simpan token khusus tester agar tidak bentrok dengan aplikasi asli
+                    localStorage.setItem('ff_token_tester', result.token);
+                    showNotif('Berhasil!', 'Mengarahkan ke dashboard...', 'success');
+                    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+                } else {
+                    showNotif('Gagal Login', result.message, 'error');
+                }
+            } catch (e) {
+                showNotif('Error Koneksi', 'Gagal menghubungi server.', 'error');
+            } finally {
+                isLoading.value = false;
+            }
+        };
+
+        return { formLogin, isLoading, notif, prosesLogin };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
