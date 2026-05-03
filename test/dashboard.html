@@ -13,32 +13,37 @@
         #ai-response-container { line-height: 1.5; color: #334155; }
         #ai-response-container h3 { color: #1e40af; margin-top: 16px; margin-bottom: 8px; font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
         #ai-response-container p { margin-bottom: 12px; }
+        #ai-response-container ul { margin-bottom: 12px; padding-left: 20px; list-style-type: disc; }
+        #ai-response-container li { margin-bottom: 6px; }
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
         [v-cloak] { display: none; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
         
-        .animate-danger-pulse { animation: customPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .animate-fade-in { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes customPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .9; transform: scale(1.02); box-shadow: 0 0 20px rgba(225, 29, 72, 0.4); } }
+        .animate-danger-pulse { animation: customPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         
-        .page-enter-active, .page-leave-active { transition: all 0.25s ease; }
+        .page-enter-active, .page-leave-active { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
         .page-enter-from { opacity: 0; transform: translateY(15px); }
         .page-leave-to { opacity: 0; transform: translateY(-15px); }
         .modal-enter-active, .modal-leave-active { transition: opacity 0.2s ease; }
         .modal-enter-from, .modal-leave-to { opacity: 0; }
         
         .toast-enter-active, .toast-leave-active { transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        /* Ubah transisi animasi agar pas untuk posisi tengah */
         .toast-enter-from, .toast-leave-to { opacity: 0; transform: translate(-50%, -40%) scale(0.85); }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-12 relative overflow-x-hidden">
 
 <div id="app" v-cloak class="max-w-[1400px] mx-auto p-4 md:p-6 space-y-6">
-    
-    <!-- NOTIFIKASI DI TENGAH LAYAR -->
+    <!-- NOTIFIKASI MODERN (TOAST) DI TENGAH -->
     <transition name="toast">
         <div v-if="notif.show" 
-             class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] border border-slate-100 overflow-hidden flex flex-col min-w-[320px] max-w-sm transition-all"
+             class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100 overflow-hidden flex flex-col min-w-[320px] max-w-sm transition-all"
              :class="notif.type === 'success' ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-rose-500'">
             <div class="p-4 flex items-start gap-4">
                 <div :class="notif.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'" class="p-2.5 rounded-full mt-0.5">
@@ -50,6 +55,7 @@
                     <p class="text-xs text-slate-500 mt-1 leading-relaxed font-medium" v-html="notif.message"></p>
                 </div>
             </div>
+            <!-- Progress Bar Animasi -->
             <div class="h-1.5 w-full bg-slate-100">
                 <div class="h-full transition-all ease-linear"
                      :class="notif.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'"
@@ -60,132 +66,488 @@
     </transition>
 
     <!-- NAVIGATION BAR -->
-    <nav class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col xl:flex-row justify-between items-center gap-4 hover:shadow-md mb-6 relative">
+    <nav class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col xl:flex-row justify-between items-center gap-4 transition-all duration-300 hover:shadow-md mb-6 relative">
         <!-- Badge Versi Tester -->
-        <div class="absolute -top-3 -right-2 bg-gradient-to-r from-orange-400 to-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md animate-pulse">TESTER VERSION</div>
+        <div class="absolute -top-3 -right-2 bg-gradient-to-r from-orange-400 to-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md animate-pulse z-50">TESTER VERSION</div>
         
         <div class="flex justify-between items-center w-full xl:w-auto gap-4">
-            <h1 class="text-2xl font-extrabold text-blue-600 tracking-tight">MyFinanceFlow</h1>
+            <h1 class="text-2xl font-extrabold text-blue-600 tracking-tight cursor-pointer hover:scale-105 transition-transform duration-300">MyFinanceFlow</h1>
+            <button @click="bukaDatabase" class="xl:hidden bg-slate-800 text-white px-3 py-2 rounded-xl text-[10px] font-bold shadow-md hover:-translate-y-1 transition-all duration-300">
+                🗄️ Database
+            </button>
         </div>
         
         <div class="flex flex-col md:flex-row gap-4 w-full xl:w-auto items-center">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl w-full md:w-auto overflow-x-auto relative">
-                <button @click="changeTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-white shadow-md text-blue-600 scale-105 z-10' : 'text-slate-500 hover:bg-slate-200'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap">📊 Dashboard</button>
-                <button @click="changeTab('analisis')" :class="activeTab === 'analisis' ? 'bg-white shadow-md text-indigo-600 scale-105 z-10' : 'text-slate-500 hover:bg-slate-200'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap">📈 Analisis AI</button>
+                <button @click="changeTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-white shadow-md text-blue-600 scale-105 z-10' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'" class="flex-1 px-4 md:px-6 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 whitespace-nowrap">📊 Dashboard</button>
+                <button @click="changeTab('cicilan')" :class="activeTab === 'cicilan' ? 'bg-white shadow-md text-orange-600 scale-105 z-10' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'" class="flex-1 px-4 md:px-6 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 whitespace-nowrap">💳 Cicilan</button>
+                <button @click="changeTab('tabungan')" :class="activeTab === 'tabungan' ? 'bg-white shadow-md text-emerald-600 scale-105 z-10' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'" class="flex-1 px-4 md:px-6 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 whitespace-nowrap">💰 Tabungan</button>
+                <button @click="changeTab('analisis')" :class="activeTab === 'analisis' ? 'bg-white shadow-md text-indigo-600 scale-105 z-10' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'" class="flex-1 px-4 md:px-6 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all duration-300 whitespace-nowrap">📈 Analisis AI</button>
             </div>
+            <button @click="bukaDatabase" class="hidden xl:flex bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-900 shadow-md hover:-translate-y-1 transition-all duration-300 items-center gap-2">
+                🗄️ Database
+            </button>
             
-            <div class="flex gap-2">
-                <!-- TOMBOL FEEDBACK BARU -->
-                <button @click="modalFeedback.isOpen = true" class="bg-amber-100 text-amber-600 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-amber-200 shadow-sm hover:-translate-y-1 transition-all">
-                    ⭐ Nilai App
-                </button>
-                <button @click="logout" class="bg-rose-100 text-rose-600 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-rose-200 shadow-sm hover:-translate-y-1 transition-all">
-                    Keluar
-                </button>
-            </div>
+            <!-- Tombol Nilai App untuk Tester -->
+            <button @click="modalFeedback.isOpen = true" class="bg-amber-100 text-amber-600 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-amber-200 shadow-sm hover:-translate-y-1 transition-all duration-300">
+                ⭐ Nilai App
+            </button>
+            <button @click="logout" class="bg-rose-100 text-rose-600 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-rose-200 shadow-sm hover:-translate-y-1 transition-all duration-300">
+                Keluar
+            </button>
         </div>
     </nav>
 
-    <!-- DASHBOARD TAB -->
+    <div class="flex justify-center md:justify-end mb-6">
+        <div class="inline-flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 overflow-x-auto w-full md:w-auto transition-all duration-300 hover:shadow-md">
+            <button v-for="p in periods" :key="p.val" @click="setFilter(p.val)"
+                    :class="filterWaktu === p.val ? 'bg-slate-800 shadow-md text-white scale-105 z-10' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'"
+                    class="px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all duration-300 uppercase tracking-wider flex-1 md:flex-none whitespace-nowrap">
+                {{ p.label }}
+            </button>
+        </div>
+    </div>
+
     <transition name="page" mode="out-in">
+        
+        <!-- DASHBOARD UTAMA -->
         <div v-if="activeTab === 'dashboard'" key="dashboard" class="space-y-6">
+            <header class="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-200 gap-4">
+                <div><p class="text-sm text-slate-500 font-medium">Ringkasan Arus Kas Sesuai Filter</p></div>
+                <div class="flex gap-4">
+                    <div class="text-right"><p class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Pemasukan</p><p class="text-xl md:text-2xl font-bold text-emerald-600">Rp {{ formatRupiah(totalPemasukanFilter) }}</p></div>
+                    <div class="w-px bg-slate-200"></div>
+                    <div class="text-right"><p class="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Pengeluaran</p><p class="text-xl md:text-2xl font-bold text-rose-600">Rp {{ formatRupiah(totalPengeluaranFilter) }}</p></div>
+                </div>
+            </header>
             <main class="grid grid-cols-1 xl:grid-cols-12 gap-6">
                 <!-- FORM INPUT -->
-                <section class="xl:col-span-4">
+                <section class="xl:col-span-4" id="form-section">
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 relative">
-                        <div class="flex justify-between items-center mb-5 mt-2">
-                            <h2 class="text-lg font-bold flex items-center gap-2">
-                                <span class="w-2 h-6 rounded-full bg-blue-500"></span> Catat Transaksi
-                            </h2>
-                            <button type="button" @click="mulaiSuara" class="bg-indigo-100 text-indigo-600 p-2 rounded-full hover:bg-indigo-200 hover:scale-110 transition-all shadow-sm group">
-                                <svg class="w-5 h-5 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                            </button>
-                        </div>
+                        <div v-if="isEditing" class="absolute top-0 left-0 w-full bg-orange-100 text-orange-700 text-xs font-bold py-1.5 text-center uppercase tracking-widest transition-all">Mode Edit Data</div>
+                    <div class="flex justify-between items-center mb-5 mt-2">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <span class="w-2 h-6 rounded-full transition-colors" :class="isEditing ? 'bg-orange-500' : 'bg-blue-500'"></span> 
+                            {{ isEditing ? 'Edit Transaksi' : 'Catat Transaksi' }}
+                        </h2>
+                        <button type="button" @click="mulaiSuara" class="bg-indigo-100 text-indigo-600 p-2 rounded-full hover:bg-indigo-200 hover:scale-110 transition-all shadow-sm group" title="Perintah Suara">
+                            <svg class="w-5 h-5 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        </button>
+                    </div>
                         <form @submit.prevent="simpanData" class="space-y-4">
                             <div class="flex gap-1.5 p-1 bg-slate-100 rounded-2xl relative">
                                 <button type="button" @click="form.jenis = 'Pengeluaran'" :class="form.jenis === 'Pengeluaran' ? 'bg-white shadow-md text-rose-600 scale-[1.02]' : 'text-slate-500 hover:bg-slate-200'" class="flex-1 py-2 rounded-xl text-xs font-bold uppercase transition-all">Keluar</button>
                                 <button type="button" @click="form.jenis = 'Pemasukan'" :class="form.jenis === 'Pemasukan' ? 'bg-white shadow-md text-emerald-600 scale-[1.02]' : 'text-slate-500 hover:bg-slate-200'" class="flex-1 py-2 rounded-xl text-xs font-bold uppercase transition-all">Masuk</button>
+                                <button type="button" @click="form.jenis = 'Tabungan'" :class="form.jenis === 'Tabungan' ? 'bg-white shadow-md text-blue-600 scale-[1.02]' : 'text-slate-500 hover:bg-slate-200'" class="flex-1 py-2 rounded-xl text-xs font-bold uppercase transition-all">Tabung</button>
                             </div>
                             <div>
                                 <label class="text-[10px] uppercase font-bold text-slate-400 ml-2 tracking-widest">Nominal (Rp)</label>
-                                <input type="number" v-model="form.nominal" required class="w-full text-2xl font-bold px-4 py-3 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all border border-slate-100">
+                                <input type="number" v-model="form.nominal" required class="w-full text-2xl font-bold px-4 py-3 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all hover:bg-white border border-slate-100">
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="col-span-2">
+                                    <label class="text-[10px] uppercase font-bold text-slate-400 ml-2 tracking-widest">Waktu Transaksi</label>
+                                    <input type="datetime-local" v-model="form.tanggal" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-all hover:bg-white">
+                                </div>
+                                <div v-if="form.jenis !== 'Tabungan'">
                                     <label class="text-[10px] uppercase font-bold text-slate-400 ml-2 tracking-widest">Kategori</label>
-                                    <select v-model="kategoriDropdown" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold cursor-pointer focus:ring-2 focus:ring-blue-500 mb-2">
+                                    <select v-model="kategoriDropdown" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold cursor-pointer focus:ring-2 focus:ring-blue-500 transition-all hover:bg-white mb-2">
                                         <option v-for="opt in listKategoriAktif" :key="opt" :value="opt">{{ opt }}</option>
                                     </select>
-                                    <input v-if="kategoriDropdown === 'Lainnya'" type="text" v-model="form.kategori" required placeholder="Ketik manual..." class="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500">
+                                    <input v-if="kategoriDropdown === 'Lainnya'" type="text" v-model="form.kategori" required placeholder="Ketik manual..." class="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500 transition-all hover:bg-white animate-fade-in">
                                 </div>
-                                <div class="col-span-2">
+                                <div v-if="form.jenis !== 'Tabungan'">
                                     <label class="text-[10px] uppercase font-bold text-slate-400 ml-2 tracking-widest">Metode Pembayaran</label>
-                                    <select v-model="metodeDropdown" @change="metodeDropdown !== 'Lainnya' ? form.metodePembayaran = metodeDropdown : null" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold cursor-pointer focus:ring-2 focus:ring-blue-500 mb-2">
+                                    <select v-model="metodeDropdown" @change="metodeDropdown !== 'Lainnya' ? form.metodePembayaran = metodeDropdown : null" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold cursor-pointer focus:ring-2 focus:ring-blue-500 transition-all hover:bg-white mb-2">
                                         <option value="Cash">💵 Cash</option>
                                         <option value="Transfer Bank">🏦 Transfer Bank</option>
-                                        <option value="E-Wallet">📱 E-Wallet (QRIS/Dana/dll)</option>
+                                        <option value="E-Wallet">📱 E-Wallet (OVO/Dana/dll)</option>
+                                        <option v-if="form.jenis === 'Pengeluaran'" value="Kredit Kredivo">💳 Kredivo</option>
+                                        <option v-if="form.jenis === 'Pengeluaran'" value="Kredit SPaylater">🛍️ SPaylater</option>
+                                        <option value="Lainnya">Lainnya... (Ketik Manual)</option>
                                     </select>
+                                    
+                                    <input v-if="metodeDropdown === 'Lainnya'" type="text" v-model="form.metodePembayaran" required placeholder="Sebutkan metode pembayaran..." class="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500 transition-all hover:bg-white animate-fade-in">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[10px] uppercase font-bold text-slate-400 ml-2 tracking-widest">Keterangan / Tujuan</label>
+                                    <input type="text" v-model="form.keterangan" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-all hover:bg-white">
                                 </div>
                             </div>
-                            <button type="submit" :disabled="isLoading" class="w-full bg-blue-600 text-white font-extrabold py-4 rounded-2xl flex justify-center items-center gap-2 shadow-lg hover:-translate-y-1 transition-all">
-                                <span v-if="isLoading" class="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
-                                {{ isLoading ? 'Memproses Data...' : 'Simpan Transaksi' }}
-                            </button>
+                            <div class="flex gap-2 mt-4">
+                                <button v-if="isEditing" type="button" @click="batalEdit" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-4 rounded-2xl hover:bg-slate-200 transition-all shadow-sm">Batal</button>
+                                <button type="submit" :disabled="isLoading" :class="isEditing ? 'w-2/3 bg-orange-500 hover:bg-orange-600 shadow-orange-500/30' : 'w-full bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'" class="text-white font-extrabold py-4 rounded-2xl flex justify-center items-center gap-2 shadow-lg hover:-translate-y-1 transition-all">
+                                    <span v-if="isLoading" class="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+                                    {{ isLoading ? 'Memproses Data...' : (isEditing ? 'Update Data Transaksi' : 'Simpan Transaksi') }}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </section>
                 
-                <!-- SUMMARY AREA -->
+                <!-- GRAFIK DASHBOARD -->
                 <section class="xl:col-span-8 space-y-6">
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-                        <h3 class="text-sm font-bold text-slate-800 border-b pb-3 mb-4">Riwayat Terakhir</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm min-w-[600px]">
-                                <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
-                                    <tr><th class="px-4 py-3">Waktu</th><th class="px-4 py-3">Jenis</th><th class="px-4 py-3">Kategori</th><th class="px-4 py-3 text-right">Nominal</th></tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100">
-                                    <tr v-for="(item, idx) in recentData" :key="idx" class="hover:bg-slate-50 transition-colors">
-                                        <td class="px-4 py-3 text-slate-500 text-xs">{{ formatTanggalView(item.tanggal) }}</td>
-                                        <td class="px-4 py-3 font-bold" :class="item.jenis === 'Pemasukan' ? 'text-emerald-600' : 'text-rose-600'">{{ item.jenis }}</td>
-                                        <td class="px-4 py-3 text-slate-600 font-medium">{{ item.kategori }}</td>
-                                        <td class="px-4 py-3 text-right font-bold text-slate-700">Rp {{ formatRupiah(item.nominal) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-8 hover:shadow-md transition-shadow">
+                        <div class="flex flex-col items-center hover:scale-[1.02] transition-transform duration-300"><h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-widest mb-4">Rasio Arus Kas</h3><div class="relative h-[220px] w-full"><canvas id="incomeExpenseChart"></canvas></div></div>
+                        <div class="flex flex-col items-center hover:scale-[1.02] transition-transform duration-300"><h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-widest mb-4">Sebaran Pembayaran</h3><div class="relative h-[220px] w-full"><canvas id="dashboardPaymentDistChart"></canvas></div></div>
+                    </div>
+                    <!-- LIST KATEGORI -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-3xl border border-slate-200 hover:shadow-md transition-shadow">
+                            <h3 class="text-sm font-bold text-emerald-600 mb-4 border-b pb-2 flex items-center gap-2">Pemasukan</h3>
+                            <div class="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                                <button v-for="(total, kat) in categoryTotalsPemasukan" :key="kat" @click="openModal('category', kat, 'Pemasukan')" class="w-full flex justify-between p-3 bg-slate-50 hover:bg-emerald-50 rounded-xl transition-all hover:shadow-sm hover:-translate-y-0.5 text-left border border-slate-100">
+                                    <span class="font-bold text-sm text-slate-700">{{ kat }}</span>
+                                    <span class="font-extrabold text-emerald-600">+ Rp {{ formatRupiah(total) }}</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-3xl border border-slate-200 hover:shadow-md transition-shadow">
+                            <h3 class="text-sm font-bold text-rose-600 mb-4 border-b pb-2 flex items-center gap-2">Pengeluaran</h3>
+                            <div class="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                                <button v-for="(total, kat) in categoryTotalsPengeluaran" :key="kat" @click="openModal('category', kat, 'Pengeluaran')" class="w-full flex justify-between p-3 bg-slate-50 hover:bg-rose-50 rounded-xl transition-all hover:shadow-sm hover:-translate-y-0.5 text-left border border-slate-100">
+                                    <span class="font-bold text-sm text-slate-700">{{ kat }}</span>
+                                    <span class="font-extrabold text-rose-600">- Rp {{ formatRupiah(total) }}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>
             </main>
         </div>
-        
-        <!-- ANALISIS AI TAB -->
-        <div v-else-if="activeTab === 'analisis'" key="analisis" class="space-y-6">
-            <div class="bg-white p-8 rounded-3xl shadow-sm border-t-4 border-t-indigo-600 text-center text-slate-600 font-bold">
-                 Tombol AI dinonaktifkan di versi tester untuk menghemat kuota percobaan.
+
+        <!-- MANAJEMEN CICILAN -->
+        <div v-else-if="activeTab === 'cicilan'" key="cicilan" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                    <div class="absolute right-[-10px] top-[-10px] opacity-10 text-rose-500"><svg class="w-32 h-32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest z-10 relative">Total Sisa Hutang</p>
+                    <h3 class="text-3xl font-extrabold text-rose-600 mt-2 z-10 relative">Rp {{ formatRupiah(totalHutangAktif) }}</h3>
+                </div>
+                <div class="bg-blue-50 p-6 rounded-3xl shadow-sm border border-blue-100 relative overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                    <div class="absolute right-4 top-4 text-blue-500 bg-white p-2 rounded-xl shadow-sm group-hover:scale-125 group-hover:rotate-12 transition-all duration-500">💳</div>
+                    <p class="text-xs font-bold text-blue-500 uppercase tracking-widest">Kredivo</p>
+                    <h3 class="text-2xl font-extrabold text-slate-800 mt-4">Rp {{ formatRupiah(hutangKredivoTotal) }}</h3>
+                    <p class="text-xs text-slate-500 mt-1">Sisa bayar: <span class="font-bold text-rose-500">Rp {{ formatRupiah(hutangKredivoSisa) }}</span></p>
+                </div>
+                <div class="bg-orange-50 p-6 rounded-3xl shadow-sm border border-orange-100 relative overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                    <div class="absolute right-4 top-4 text-orange-500 bg-white p-2 rounded-xl shadow-sm group-hover:scale-125 group-hover:-rotate-12 transition-all duration-500">🛍️</div>
+                    <p class="text-xs font-bold text-orange-500 uppercase tracking-widest">SPaylater</p>
+                    <h3 class="text-2xl font-extrabold text-slate-800 mt-4">Rp {{ formatRupiah(hutangSpaylaterTotal) }}</h3>
+                    <p class="text-xs text-slate-500 mt-1">Sisa bayar: <span class="font-bold text-rose-500">Rp {{ formatRupiah(hutangSpaylaterSisa) }}</span></p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                <div class="xl:col-span-4 space-y-4">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="flex justify-between items-start mb-6">
+                            <div><h2 class="text-lg font-bold flex items-center gap-2 text-indigo-600">Simulasi Batas Aman</h2><p class="text-xs text-slate-500">Persentase sehat hutang bulanan.</p></div>
+                            <button @click="editBatasAman" class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors shadow-sm">✏️ {{ persentaseBatasAman }}%</button>
+                        </div>
+                        <label class="text-[10px] uppercase font-bold text-slate-400 ml-1 tracking-widest">Pemasukan / Gaji (Rp)</label>
+                        <input type="number" v-model="simulasiGaji" class="w-full text-xl font-bold px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mb-6 transition-all hover:bg-white">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center pb-3 border-b border-slate-100"><span class="text-sm font-semibold text-slate-600">Batas Max Hutang</span><span class="font-bold text-indigo-600">Rp {{ formatRupiah(batasAmanKredit) }}</span></div>
+                            <div class="flex justify-between items-center pb-3 border-b border-slate-100"><span class="text-sm font-semibold text-slate-600">Sisa Hutang Berjalan</span><span class="font-bold text-rose-600">Rp {{ formatRupiah(totalHutangAktif) }}</span></div>
+                            <div class="flex justify-between items-center pt-2"><span class="text-sm font-extrabold text-slate-800">Ruang Cicilan Baru</span><span class="text-lg font-extrabold" :class="sisaKuotaKredit < 0 ? 'text-rose-600' : 'text-emerald-600'">Rp {{ formatRupiah(sisaKuotaKredit) }}</span></div>
+                        </div>
+                    </div>
+                    <div v-if="sisaKuotaKredit < 0" class="animate-danger-pulse bg-rose-100 border-2 border-rose-500 text-rose-700 p-4 rounded-3xl flex items-center gap-3 shadow-lg shadow-rose-200">
+                        <span class="text-3xl">⚠️</span><div><h4 class="font-extrabold text-sm uppercase">Peringatan Kritis!</h4><p class="text-xs font-medium">Anda mengambil cicilan melebihi batas aman.</p></div>
+                    </div>
+                </div>
+                <div class="xl:col-span-8 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-8 hover:shadow-md transition-shadow">
+                    <div class="flex flex-col items-center border-r border-slate-100 pr-0 md:pr-4 hover:scale-[1.02] transition-transform duration-300"><h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-widest mb-2">Status Keseluruhan</h3><p class="text-[10px] text-slate-400 mb-4">Lunas vs Belum Lunas</p><div class="relative h-[220px] w-full"><canvas id="cicilanStatusChart"></canvas></div></div>
+                    <div class="flex flex-col items-center hover:scale-[1.02] transition-transform duration-300"><h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-widest mb-2">Tren Beban Cicilan</h3><p class="text-[10px] text-slate-400 mb-4">Sesuai Filter Waktu</p><div class="relative h-[220px] w-full"><canvas id="cicilanTrendChart"></canvas></div></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+                <div class="p-6 border-b border-slate-100"><h2 class="text-xl font-bold text-slate-800">Daftar Tagihan & Rincian Cicilan</h2></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm min-w-[1000px]">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                            <tr><th class="px-6 py-4">Kode ID</th><th class="px-6 py-4">Waktu</th><th class="px-6 py-4">Pembayaran</th><th class="px-6 py-4">Keterangan</th><th class="px-6 py-4 text-right">Total Nominal</th><th class="px-6 py-4 text-right">Sudah Dibayar</th><th class="px-6 py-4 text-right text-rose-500">Sisa Tagihan</th><th class="px-6 py-4 text-center">Status</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-for="(item, idx) in listCicilan" :key="idx" class="hover:bg-blue-50/50 transition-colors duration-200">
+                                <td class="px-6 py-4 font-mono text-xs text-slate-400">{{ item.id }}</td>
+                                <td class="px-6 py-4 text-slate-500 text-xs whitespace-nowrap">{{ formatTanggalView(item.tanggal) }}</td>
+                                <td class="px-6 py-4 font-bold" :class="item.metodePembayaran.includes('Kredivo') ? 'text-blue-600' : 'text-orange-500'">{{ item.metodePembayaran }}</td>
+                                <td class="px-6 py-4 text-slate-600 font-medium">{{ item.keterangan || item.kategori }}</td>
+                                <td class="px-6 py-4 text-right font-bold text-slate-700">Rp {{ formatRupiah(item.nominal) }}</td>
+                                <td class="px-6 py-4 text-right font-bold text-emerald-600">Rp {{ formatRupiah(item.terbayar) }}</td>
+                                <td class="px-6 py-4 text-right font-extrabold text-rose-600">Rp {{ formatRupiah(item.nominal - item.terbayar) }}</td>
+                                <td class="px-6 py-4 text-center">
+                                    <button v-if="item.status === 'Belum Lunas'" @click="bukaModalBayar(item)" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 hover:-translate-y-0.5 text-white rounded-lg text-xs font-bold transition-all shadow-md">💰 Bayar</button>
+                                    <span v-else class="text-xs text-emerald-600 bg-emerald-100 px-3 py-1.5 rounded-lg font-bold shadow-sm">LUNAS ✅</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+
+        <!-- ========================================== -->
+        <!-- HALAMAN 3: TABUNGAN                        -->
+        <!-- ========================================== -->
+        <div v-else-if="activeTab === 'tabungan'" key="tabungan" class="space-y-6">
+            <div class="bg-emerald-600 text-white p-8 rounded-3xl shadow-lg relative overflow-hidden hover:shadow-emerald-500/30 hover:-translate-y-1 transition-all duration-300">
+                <div class="absolute right-[-20px] bottom-[-40px] opacity-20"><svg class="w-64 h-64 animate-[spin_60s_linear_infinite]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1010 10A10.011 10.011 0 0012 2zm0 18a8 8 0 118-8 8.009 8.009 0 01-8 8z"/><path d="M12 6a.75.75 0 00-.75.75v1.5a2.251 2.251 0 00-1.5 2.125c0 1.25 1.008 2.25 2.25 2.25h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 0012 8.375V7A.75.75 0 0012 6z"/></svg></div>
+                <p class="text-sm font-bold text-emerald-100 uppercase tracking-widest relative z-10">Total Tabungan Terkumpul</p>
+                <h3 class="text-4xl font-extrabold mt-2 relative z-10">Rp {{ formatRupiah(totalTabungan) }}</h3>
+                <p class="text-xs text-emerald-200 mt-2 relative z-10">Dari seluruh riwayat (Mengabaikan filter waktu)</p>
+            </div>
+
+            <!-- KARTU TARGET TABUNGAN DENGAN SISA KURANG -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 hover:shadow-md transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-emerald-100 rounded-2xl text-2xl">🎯</div>
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target Tabungan</p>
+                        <h3 class="text-xl font-extrabold text-slate-800">Rp {{ formatRupiah(targetTabungan) }}</h3>
+                        <p v-if="targetTabungan > totalTabungan" class="text-[10px] font-bold text-rose-500 mt-1">
+                            Sisa Kurang: Rp {{ formatRupiah(targetTabungan - totalTabungan) }}
+                        </p>
+                        <p v-else-if="targetTabungan > 0" class="text-[10px] font-bold text-emerald-600 mt-1">
+                            Target Tercapai! 🎉
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex-1 w-full max-w-md">
+                    <div class="flex justify-between text-[10px] font-bold mb-1">
+                        <span class="text-slate-500 uppercase">Progres Pencapaian</span>
+                        <span class="text-emerald-600">{{ Math.min(((totalTabungan / (targetTabungan || 1)) * 100), 100).toFixed(1) }}%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div class="bg-emerald-500 h-full transition-all duration-1000" :style="{ width: Math.min(((totalTabungan / (targetTabungan || 1)) * 100), 100) + '%' }"></div>
+                    </div>
+                </div>
+            
+                <button @click="setTargetTabungan" class="bg-slate-800 text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-900 transition-all shadow-md active:scale-95">
+                    Set Target
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                <div class="xl:col-span-7 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                    <h3 class="text-sm font-extrabold text-slate-700 uppercase tracking-widest mb-2">Grafik Pertumbuhan Tabungan</h3>
+                    <div class="relative h-[300px] w-full"><canvas id="tabunganChart"></canvas></div>
+                </div>
+                <div class="xl:col-span-5 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                    <h3 class="text-sm font-extrabold text-slate-700 uppercase tracking-widest mb-4 border-b pb-3">Riwayat Menabung</h3>
+                    <div class="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                        <div v-for="(item, idx) in listTabungan" :key="idx" class="flex justify-between items-center p-3.5 bg-slate-50 rounded-xl border border-slate-100 hover:bg-emerald-50 hover:-translate-y-0.5 transition-all">
+                            <div>
+                                <p class="font-bold text-sm text-slate-800">{{ item.keterangan || 'Menabung' }} <span class="text-[10px] text-slate-400 font-mono ml-1">({{item.id}})</span></p>
+                                <p class="text-[10px] text-slate-500">{{ formatTanggalView(item.tanggal) }}</p>
+                            </div>
+                            <span class="font-extrabold text-emerald-600">+ Rp {{ formatRupiah(item.nominal) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- HALAMAN 4: ANALISIS AI (OTOMATIS)          -->
+        <!-- ========================================== -->
+        <div v-else-if="activeTab === 'analisis'" key="analisis" class="space-y-6">
+            
+            <div :class="statusAnalisis.bgClass" class="text-white p-8 rounded-3xl shadow-xl relative overflow-hidden transition-colors duration-700 hover:shadow-2xl hover:-translate-y-1">
+                <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4"><svg class="w-64 h-64" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2zM9 11V7h2v4H9zm4 6V7h2v10h-2zm-8-4V7h2v6H5zm14 4h-2v-4h2v4z"/></svg></div>
+                <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <p class="text-xs font-bold text-white/70 uppercase tracking-widest mb-1">Status Kesehatan Finansial</p>
+                        <h2 class="text-4xl font-extrabold flex items-center gap-3 drop-shadow-md">
+                            {{ statusAnalisis.statusKeseluruhan }}
+                        </h2>
+                        <div class="mt-4 pt-4 border-t border-white/20">
+                            <p class="text-sm font-medium leading-relaxed opacity-95">{{ statusAnalisis.deskripsi }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KOTAK HASIL AI (OTOMATIS LOADING) -->
+            <transition name="page" mode="out-in">
+                <!-- Jika Sedang Loading -->
+                <div v-if="isAnalyzingAI" key="loading" class="bg-white p-12 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-6 min-h-[300px]">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-indigo-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                        <span class="relative block animate-spin border-4 border-indigo-100 border-t-indigo-600 rounded-full w-14 h-14"></span>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-lg font-extrabold text-slate-800 animate-pulse">Menganalisis Data Profil Anda...</h3>
+                        <p class="text-sm text-slate-500 mt-1">Robo-Advisor AI sedang menyusun laporan komprehensif.</p>
+                    </div>
+                </div>
+
+                <!-- Jika Selesai Loading dan Ada Hasil -->
+                <div v-else-if="aiAnalysisResult" key="result" class="bg-white p-8 rounded-3xl shadow-sm border-t-4 border-t-indigo-600 prose prose-sm max-w-none text-slate-700 leading-relaxed">
+                    <h3 class="text-xl font-extrabold text-indigo-900 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                        <span class="text-2xl">✨</span> Laporan Eksekutif AI (Gemini)
+                    </h3>
+                    <div v-html="aiAnalysisResult" class="space-y-4"></div>
+                </div>
+
+                <!-- Fallback / Error AI -->
+                <div v-else key="error" class="bg-slate-50 p-8 rounded-3xl shadow-sm border border-slate-200 text-center">
+                    <p class="text-slate-500">Tidak dapat memuat laporan AI saat ini. Pastikan koneksi internet stabil dan server merespons.</p>
+                    <button @click="analisisDenganAI" class="mt-4 text-sm font-bold text-indigo-600 hover:underline">Coba Ulang Analisis</button>
+                </div>
+            </transition>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div class="xl:col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                    <h3 class="text-sm font-extrabold text-slate-700 uppercase tracking-widest mb-2 text-center">Komparasi Pilar Finansial</h3>
+                    <div class="relative h-[250px] w-full"><canvas id="radarAnalysisChart"></canvas></div>
+                </div>
+
+                <div class="xl:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 space-y-6 hover:shadow-md transition-shadow">
+                    <h3 class="text-lg font-extrabold text-slate-800 border-b border-slate-100 pb-3">Algoritma Rekomendasi Sistem Lokal</h3>
+                    
+                    <div v-if="statusAnalisis.anjuran.length > 0" class="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 hover:shadow-sm transition-shadow">
+                        <h4 class="text-sm font-bold text-emerald-700 uppercase tracking-widest mb-3 flex items-center gap-2">✅ Rekomendasi Strategis</h4>
+                        <ul class="space-y-2"><li v-for="(item, idx) in statusAnalisis.anjuran" :key="idx" class="text-sm text-slate-700 flex items-start gap-2"><span class="text-emerald-500 mt-0.5">•</span> {{ item }}</li></ul>
+                    </div>
+                    <div v-if="statusAnalisis.peringatan.length > 0" class="bg-amber-50 border border-amber-100 rounded-2xl p-5 hover:shadow-sm transition-shadow">
+                        <h4 class="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3 flex items-center gap-2">⚠️ Peringatan Risiko</h4>
+                        <ul class="space-y-2"><li v-for="(item, idx) in statusAnalisis.peringatan" :key="idx" class="text-sm text-slate-700 flex items-start gap-2"><span class="text-amber-500 mt-0.5">•</span> {{ item }}</li></ul>
+                    </div>
+                    <div v-if="statusAnalisis.larangan.length > 0" class="bg-rose-50 border border-rose-100 rounded-2xl p-5 hover:shadow-sm transition-shadow">
+                        <h4 class="text-sm font-bold text-rose-700 uppercase tracking-widest mb-3 flex items-center gap-2">🚫 Tindakan Terlarang</h4>
+                        <ul class="space-y-2"><li v-for="(item, idx) in statusAnalisis.larangan" :key="idx" class="text-sm text-slate-700 flex items-start gap-2"><span class="text-rose-500 mt-0.5">•</span> {{ item }}</li></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </transition>
 
     <!-- MODAL KONFIRMASI VOICE NOTE -->
     <transition name="modal">
         <div v-if="modalVoiceConfirm.isOpen" class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+            <!-- Latar belakang gelap (Backdrop) -->
             <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" @click="batalVoiceSimpan"></div>
+            
+            <!-- Kartu Modal Utama -->
             <div class="relative bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden transform transition-all scale-100">
+                
+                <!-- Header dengan Gradasi Modern -->
                 <div class="bg-gradient-to-br from-indigo-500 to-blue-600 p-6 text-center relative overflow-hidden">
-                    <h2 class="text-xl font-extrabold text-white mt-2 relative z-10">Konfirmasi Suara AI</h2>
+                    <div class="absolute top-[-20px] right-[-20px] opacity-20"><svg class="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>
+                    <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-md shadow-inner relative z-10 border border-white/30">
+                        <span class="text-3xl drop-shadow-md">🎙️</span>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-white mb-1 relative z-10">Konfirmasi Suara</h2>
+                    <p class="text-indigo-100 text-xs font-medium relative z-10">Sistem berhasil memproses ucapan Anda.</p>
                 </div>
-                <div class="p-6 bg-white space-y-4">
-                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
-                        <div class="flex justify-between items-center pb-2 border-b border-slate-200/60"><span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Jenis</span><span class="text-xs font-extrabold text-slate-700">{{ modalVoiceConfirm.data.jenis }}</span></div>
-                        <div class="flex justify-between items-center py-2 border-b border-slate-200/60"><span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Nominal</span><span class="text-xl font-black text-slate-800">Rp {{ formatRupiah(modalVoiceConfirm.data.nominal) }}</span></div>
-                        <div class="flex justify-between items-center py-2 border-b border-slate-200/60"><span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Kategori</span><span class="text-sm font-bold text-slate-700">{{ modalVoiceConfirm.kategoriDisplay }}</span></div>
-                        <div class="flex justify-between items-center pt-2"><span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Metode</span><span class="text-sm font-bold text-slate-700">{{ modalVoiceConfirm.metode }}</span></div>
+                
+                <!-- Detail Rincian -->
+                <div class="p-6 bg-white">
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3 mb-4 shadow-sm">
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                            <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Jenis</span>
+                            <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg shadow-sm" :class="modalVoiceConfirm.data.jenis === 'Pemasukan' || modalVoiceConfirm.data.jenis === 'Tabungan' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-rose-100 text-rose-700 border border-rose-200'">
+                                {{ modalVoiceConfirm.data.jenis }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                            <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Nominal</span>
+                            <span class="text-xl font-black text-slate-800 tracking-tight">Rp {{ formatRupiah(modalVoiceConfirm.data.nominal) }}</span>
+                        </div>
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                            <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Kategori</span>
+                            <span class="text-sm font-bold text-slate-700">{{ modalVoiceConfirm.kategoriDisplay }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Metode</span>
+                            <span class="text-sm font-bold text-slate-700">{{ modalVoiceConfirm.metode }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Kutipan Ucapan -->
+                    <div class="bg-blue-50/50 border border-blue-100 p-3 rounded-xl flex gap-3 items-start">
+                        <span class="text-blue-400 text-lg">❝</span>
+                        <div>
+                            <p class="text-[9px] text-blue-500 font-extrabold uppercase tracking-widest mb-0.5">Teks Terdeteksi</p>
+                            <p class="text-xs text-slate-600 italic font-medium leading-relaxed">{{ modalVoiceConfirm.originalText }}</p>
+                        </div>
                     </div>
                 </div>
-                <div class="p-5 bg-slate-50 flex gap-3">
-                    <button @click="batalVoiceSimpan" class="w-1/3 bg-white text-slate-600 border border-slate-200 font-bold py-3.5 rounded-xl shadow-sm text-xs uppercase">Batal</button>
-                    <button @click="konfirmasiVoiceSimpan" :disabled="isLoading" class="w-2/3 bg-indigo-600 text-white font-extrabold py-3.5 rounded-xl shadow-md text-sm uppercase">Simpan</button>
+
+                <!-- Tombol Aksi Bawah -->
+                <div class="p-5 bg-slate-50 border-t border-slate-100 flex gap-3">
+                    <button @click="batalVoiceSimpan" class="w-1/3 bg-white text-slate-600 border border-slate-200 font-bold py-3.5 rounded-xl hover:bg-slate-100 hover:text-slate-800 transition-colors shadow-sm text-xs uppercase tracking-wide">Edit Manual</button>
+                    <button @click="konfirmasiVoiceSimpan" :disabled="isLoading" class="w-2/3 bg-indigo-600 text-white font-extrabold py-3.5 rounded-xl hover:bg-indigo-700 flex justify-center items-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">
+                        <span v-if="isLoading" class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+                        {{ isLoading ? 'Menyimpan...' : 'Simpan Langsung' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- MODAL PEMBAYARAN PARSIAL -->
+    <transition name="modal">
+        <div v-if="modalBayar.isOpen" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="modalBayar.isOpen = false"></div>
+            <div class="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-6">
+                <h2 class="text-xl font-bold text-slate-800 mb-1">Bayar Cicilan</h2>
+                <p class="text-xs text-slate-500 mb-6 font-semibold">{{ modalBayar.data.keterangan || modalBayar.data.kategori }} via {{ modalBayar.data.metodePembayaran }}</p>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3 mb-6 text-sm">
+                    <div class="flex justify-between"><span class="text-slate-500">Tagihan Awal</span><span class="font-bold">Rp {{ formatRupiah(modalBayar.data.nominal) }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Sudah Dibayar</span><span class="font-bold text-emerald-600">Rp {{ formatRupiah(modalBayar.data.terbayar) }}</span></div>
+                    <div class="flex justify-between border-t border-slate-200 pt-3"><span class="font-bold text-slate-700">SISA HUTANG</span><span class="font-extrabold text-rose-600 text-lg">Rp {{ formatRupiah(modalBayar.data.nominal - modalBayar.data.terbayar) }}</span></div>
+                </div>
+                <label class="text-[10px] uppercase font-bold text-slate-400 ml-1">Nominal Pembayaran (Rp)</label>
+                <input type="number" v-model="modalBayar.nominalInput" class="w-full text-xl font-bold px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mb-6 mt-1 transition-all hover:bg-slate-50">
+                <div class="flex gap-2">
+                    <button @click="modalBayar.isOpen = false" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors">Batal</button>
+                    <button @click="prosesBayar" :disabled="isLoading" class="w-2/3 bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 flex justify-center items-center gap-2 shadow-md hover:-translate-y-0.5 transition-all">
+                        <span v-if="isLoading" class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>Konfirmasi Bayar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- MODAL DAFTAR RINCIAN (CRUD) -->
+    <transition name="modal">
+        <div v-if="modal.isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="closeModal"></div>
+            <div class="relative bg-white w-full max-w-5xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+                <div class="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center">
+                    <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">
+                        Rincian <span :class="modal.jenis === 'Pemasukan' ? 'text-emerald-600 bg-emerald-100 px-3 py-1' : 'text-rose-600 bg-rose-100 px-3 py-1'" class="rounded-lg">{{ modal.title }}</span>
+                    </h2>
+                    <button @click="closeModal" class="p-2 bg-slate-100 hover:bg-rose-100 hover:text-rose-600 rounded-full transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                </div>
+                <div class="overflow-y-auto flex-1 p-0">
+                    <table class="w-full text-left text-sm min-w-[850px]">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold sticky top-0 z-10 shadow-sm">
+                            <tr><th class="px-6 py-4">ID Transaksi</th><th class="px-6 py-4">Waktu</th><th class="px-6 py-4">Metode</th><th class="px-6 py-4">Keterangan</th><th class="px-6 py-4 text-right">Nominal</th><th class="px-6 py-4 text-center">Aksi</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-for="(item, idx) in modal.data" :key="idx" class="hover:bg-blue-50/50 group transition-colors">
+                                <td class="px-6 py-4 font-mono text-xs text-slate-400">{{ item.id }}</td>
+                                <td class="px-6 py-4 text-slate-500 text-xs">{{ formatTanggalView(item.tanggal) }}</td>
+                                <td class="px-6 py-4"><span class="px-2 py-1 bg-slate-100 rounded-md text-[10px] font-bold">{{ item.metodePembayaran || 'Cash' }}</span></td>
+                                <td class="px-6 py-4 text-slate-600">{{ item.keterangan || '-' }}</td>
+                                <td class="px-6 py-4 text-right font-bold" :class="item.jenis === 'Pemasukan' ? 'text-emerald-600' : 'text-rose-600'">Rp {{ formatRupiah(item.nominal) }}</td>
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button @click="siapkanEdit(item)" class="p-1.5 bg-orange-100 text-orange-600 hover:bg-orange-200 rounded-md transition-colors">✏️</button>
+                                        <button @click="hapusData(item)" class="p-1.5 bg-rose-100 text-rose-600 hover:bg-rose-200 rounded-md transition-colors">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -221,7 +583,8 @@
 </div>
 
 <script>
-const { createApp, ref, onMounted, computed } = Vue;
+Chart.register(ChartDataLabels);
+const { createApp, ref, onMounted, computed, nextTick, watch } = Vue;
 
 const getCurrentDateTimeLocal = () => {
     const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -230,30 +593,72 @@ const getCurrentDateTimeLocal = () => {
 
 createApp({
     setup() {
-        // GANTI INI DENGAN URL DEPLOYMENT BARU ANDA
-        const API_URL = "https://script.google.com/macros/s/AKfycb.../exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbwtAqt1Tce5ESpSEP5vowug9aDhCIUaBHWuembT0moeJatP3jgZ4gbU716lH3P3iNMfSg/exec"; 
+        const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1KPlSP5OI1jhc4C6rJNZiT9EvJdKX79qXYEiftkBokhg/edit?usp=sharing"; 
         
-        onMounted(() => { fetchData(); }); // Tidak blokir tanpa token untuk mempermudah Tester
+        onMounted(() => {
+            if(!localStorage.getItem('ff_token_tester')) { window.location.href = 'index.html'; } 
+            else { 
+                fetchData(); 
+                fetchSettings(); 
+            }
+        });
+
+        const logout = () => { localStorage.removeItem('ff_token_tester'); window.location.href = 'index.html'; };
 
         const notif = ref({ show: false, title: '', message: '', type: 'success', progress: 100 });
+        // Sekarang showNotif menerima Judul, Pesan, dan Tipe
         const showNotif = (title, msg, type = 'success') => {
             notif.value = { show: true, title: title, message: msg, type: type, progress: 100 };
+            
+            // Memberikan sedikit delay agar transisi CSS progress bar berjalan mulus
             setTimeout(() => { notif.value.progress = 0; }, 50);
             setTimeout(() => { notif.value.show = false; }, 3500);
         };
 
-        const activeTab = ref('dashboard');
         const dataTransaksi = ref([]);
         const isLoading = ref(false);
-        const form = ref({ tanggal: getCurrentDateTimeLocal(), jenis: 'Pengeluaran', kategori: '', keterangan: '', metodePembayaran: 'Cash', nominal: '' });
+        const filterWaktu = ref('30'); 
+        
+        const activeTab = ref(localStorage.getItem('financeFlow_activeTab') || 'dashboard');
+        watch(activeTab, (newTab) => { localStorage.setItem('financeFlow_activeTab', newTab); });
+        
+        const periods = [{ label: 'Hari Ini', val: '1' }, { label: '1 Bulan', val: '30' }, { label: '3 Bulan', val: '90' }, { label: '6 Bulan', val: '180' }, { label: '1 Tahun', val: '365' }];
+
+        const isEditing = ref(false); const editId = ref(null); const oldDataRef = ref(null);
+        
         const kategoriDropdown = ref('Makan');
+        const listKategoriAktif = computed(() => {
+            if (form.value.jenis === 'Pemasukan') return ['Pemasukan Utama', 'Pemasukan Sampingan', 'Lainnya'];
+            return ['Makan', 'Minum', 'Transportasi', 'Listrik', 'Air', 'Cicilan Rumah', 'Cicilan Kendaraan', 'Lainnya'];
+        });
+        
         const metodeDropdown = ref('Cash');
 
-        const listKategoriAktif = computed(() => form.value.jenis === 'Pemasukan' ? ['Pemasukan Utama', 'Pemasukan Sampingan', 'Lainnya'] : ['Makan', 'Minum', 'Transportasi', 'Lainnya']);
-        const recentData = computed(() => dataTransaksi.value.slice(0, 5));
-
-        const modalVoiceConfirm = ref({ isOpen: false, data: null, metode: '', kategoriDisplay: '', originalText: '' });
+        const form = ref({ tanggal: getCurrentDateTimeLocal(), jenis: 'Pengeluaran', kategori: '', keterangan: '', metodePembayaran: 'Cash', nominal: '' });
         
+        watch(() => form.value.jenis, (newVal) => {
+            if (!isEditing.value && newVal !== 'Tabungan') {
+                kategoriDropdown.value = newVal === 'Pemasukan' ? 'Pemasukan Utama' : 'Makan';
+                form.value.kategori = '';
+                metodeDropdown.value = 'Cash';
+            }
+        });
+
+        const modal = ref({ isOpen: false, type: '', title: '', jenis: '', data: [], total: 0 });
+        const modalBayar = ref({ isOpen: false, data: null, nominalInput: '' });
+        const modalVoiceConfirm = ref({ isOpen: false, data: null, metode: '', kategoriDisplay: '', originalText: '' });
+
+        const konfirmasiVoiceSimpan = async () => {
+            modalVoiceConfirm.value.isOpen = false;
+            await simpanData();
+        };
+        
+        const batalVoiceSimpan = () => {
+            modalVoiceConfirm.value.isOpen = false;
+            showNotif("Mode auto-simpan dibatalkan. Silakan edit form manual.", "success");
+        };
+
         // --- LOGIKA FEEDBACK ---
         const modalFeedback = ref({ isOpen: false, rating: 0, komentar: '' });
         const kirimFeedback = async () => {
@@ -266,7 +671,7 @@ createApp({
                         action: 'submit_feedback', 
                         rating: modalFeedback.value.rating, 
                         komentar: modalFeedback.value.komentar,
-                        token: localStorage.getItem('ff_token') || 'Tester'
+                        token: localStorage.getItem('ff_token_tester')
                     })
                 });
                 const result = await res.json();
@@ -281,63 +686,586 @@ createApp({
             }
         };
 
-        // --- FUNGSI UTAMA LAINNYA ---
-        const formatRupiah = (val) => new Intl.NumberFormat('id-ID').format(val || 0);
-        const formatTanggalView = (iso) => new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit'}).format(new Date(iso));
-        const changeTab = (tab) => { activeTab.value = tab; };
-        const logout = () => { window.location.href = 'index.html'; };
+        const persentaseBatasAman = ref(localStorage.getItem('financeFlow_batasAman') || 30);
+        const simulasiGaji = ref(5000000); 
+        const targetTabungan = ref(0); 
 
-        const fetchData = async () => { 
-            try { const res = await fetch(API_URL); dataTransaksi.value = (await res.json()).reverse(); } catch (e) { } 
-        };
+        // State AI
+        const isAnalyzingAI = ref(false);
+        const aiAnalysisResult = ref('');
 
-        const simpanData = async () => {
-            if(!form.value.nominal) return showNotif("Error", "Nominal wajib diisi", "error");
-            form.value.kategori = kategoriDropdown.value !== 'Lainnya' ? kategoriDropdown.value : form.value.kategori;
-            form.value.metodePembayaran = metodeDropdown.value !== 'Lainnya' ? metodeDropdown.value : form.value.metodePembayaran;
-            
-            isLoading.value = true;
-            try { 
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'create', data: form.value, token: 'Tester' }) }); 
-                const result = await res.json();
-                if(result.status === 'success'){ 
-                    showNotif("Transaksi Tersimpan!", `<b>Rp ${formatRupiah(form.value.nominal)}</b> (${form.value.kategori})`, 'success'); 
-                    form.value.nominal = ''; fetchData(); 
-                } 
-            } catch (e) { showNotif("Timeout", "Server sibuk", "error"); } finally { isLoading.value = false; }
+        let chartIncExp = null; let chartDist = null; let chartRadar = null;
+        let chartStatusCicilan = null; let chartTrendCicilan = null; let chartTabunganIns = null;
+
+        const resetForm = () => { 
+            form.value = { tanggal: getCurrentDateTimeLocal(), jenis: 'Pengeluaran', kategori: '', keterangan: '', metodePembayaran: 'Cash', nominal: '' }; 
+            kategoriDropdown.value = 'Makan';
+            metodeDropdown.value = 'Cash';
+            isEditing.value = false; editId.value = null; oldDataRef.value = null; 
         };
 
         const mulaiSuara = () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return showNotif("Error", "Browser tidak support.", "error");
+            
+            if (!SpeechRecognition) {
+                return showNotif("Browser Anda menolak fitur ini. Gunakan Chrome/Edge.", "error");
+            }
+
             const recognition = new SpeechRecognition();
             recognition.lang = 'id-ID';
+            recognition.continuous = false; 
+            recognition.interimResults = false;
+
             recognition.start();
-            showNotif("Mendengarkan...", "Silakan bicara sekarang", "success");
+            showNotif("Mendengarkan...", "Sebutkan nominal, tujuan, dan waktu.", "success");
 
             recognition.onresult = async (event) => {
                 const teks = event.results[0][0].transcript;
-                showNotif("Memproses AI...", "Groq sedang bekerja", "success");
+                showNotif("Memproses Suara", "Menganalisis kalimat dengan Groq AI...", "success");
+                
                 try {
                     isLoading.value = true;
-                    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'parse_voice', text: teks, currentDate: getCurrentDateTimeLocal(), token: 'Tester' }) });
+                    const res = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ 
+                            action: 'parse_voice', 
+                            text: teks,
+                            currentDate: getCurrentDateTimeLocal(),
+                            token: localStorage.getItem('ff_token_tester')
+                        })
+                    });
+                    
                     const result = await res.json();
                     
                     if (result.status === 'success') {
-                        const ai = result.data;
-                        form.value.jenis = ai.jenis; form.value.nominal = ai.nominal; form.value.keterangan = "Voice: " + teks; form.value.tanggal = ai.tanggal || getCurrentDateTimeLocal();
-                        kategoriDropdown.value = ai.kategori; metodeDropdown.value = ai.metode;
+                        const aiData = result.data;
+                        
+                        form.value.jenis = aiData.jenis || 'Pengeluaran';
+                        form.value.nominal = aiData.nominal || 0;
+                        form.value.keterangan = "Voice: " + teks;
+                        
+                        // --- MENERAPKAN TANGGAL DARI AI ---
+                        if(aiData.tanggal) {
+                            form.value.tanggal = aiData.tanggal;
+                        }
 
-                        modalVoiceConfirm.value = { isOpen: true, data: { ...form.value }, metode: ai.metode, kategoriDisplay: ai.kategori, originalText: teks };
-                    } else showNotif("AI Bingung", "Silakan ulangi kalimat.", "error");
-                } catch (e) { showNotif("Koneksi Error", "AI server sibuk.", "error"); } finally { isLoading.value = false; }
+                        // ... (sisa logika metode dan kategori tetap sama seperti sebelumnya) ...
+                        const metList = ['Cash', 'Transfer Bank', 'E-Wallet', 'Kredit Kredivo', 'Kredit SPaylater'];
+                        if (metList.includes(aiData.metode)) {
+                            metodeDropdown.value = aiData.metode;
+                        } else {
+                            metodeDropdown.value = 'Lainnya';
+                            form.value.metodePembayaran = aiData.metode || 'Cash';
+                        }
+
+                        if(form.value.jenis === 'Tabungan') {
+                            kategoriDropdown.value = 'Lainnya'; 
+                            form.value.kategori = 'Tabungan';
+                        } else {
+                            const katList = form.value.jenis === 'Pemasukan' ? ['Pemasukan Utama', 'Pemasukan Sampingan'] : ['Makan', 'Minum', 'Transportasi', 'Listrik', 'Air', 'Cicilan Rumah', 'Cicilan Kendaraan'];
+                            
+                            if (katList.includes(aiData.kategori)) {
+                                kategoriDropdown.value = aiData.kategori;
+                                form.value.kategori = ''; 
+                            } else {
+                                kategoriDropdown.value = 'Lainnya';
+                                form.value.kategori = aiData.kategori || 'Lainnya';
+                            }
+                        }
+                        
+                        // Menampilkan modal konfirmasi
+                        modalVoiceConfirm.value = {
+                            isOpen: true,
+                            data: { ...form.value },
+                            metode: metodeDropdown.value !== 'Lainnya' ? metodeDropdown.value : form.value.metodePembayaran,
+                            kategoriDisplay: form.value.kategori || kategoriDropdown.value,
+                            originalText: teks
+                        };
+                        
+                    } else {
+                        showNotif("AI Bingung", "Gagal memahami kalimat Anda.", "error");
+                    }
+                } catch (e) {
+                    showNotif("Koneksi Error", "Koneksi ke AI terputus.", "error");
+                } finally {
+                    isLoading.value = false;
+                }
+            };
+            
+            // Error handling di suara
+            recognition.onerror = (event) => { 
+                if (event.error === 'no-speech') showNotif("Senyap", "Suara tidak terdengar.", "error");
+                else showNotif("Mikrofon Error", event.error, "error");
             };
         };
 
-        const konfirmasiVoiceSimpan = async () => { modalVoiceConfirm.value.isOpen = false; await simpanData(); };
-        const batalVoiceSimpan = () => { modalVoiceConfirm.value.isOpen = false; showNotif("Dibatalkan", "Edit manual diaktifkan.", "success"); };
+        const filteredData = computed(() => {
+            const now = new Date(); const pastDate = new Date(); pastDate.setDate(now.getDate() - parseInt(filterWaktu.value));
+            return dataTransaksi.value.filter(item => { const itemDate = new Date(item.tanggal); return itemDate >= pastDate && itemDate <= now; });
+        });
 
-        return { form, isLoading, activeTab, notif, showNotif, logout, formatRupiah, formatTanggalView, changeTab, simpanData, mulaiSuara, kategoriDropdown, listKategoriAktif, metodeDropdown, modalVoiceConfirm, konfirmasiVoiceSimpan, batalVoiceSimpan, recentData, modalFeedback, kirimFeedback };
+        const totalPemasukanFilter = computed(() => filteredData.value.filter(d => d.jenis === 'Pemasukan').reduce((a, b) => a + Number(b.nominal), 0));
+        const totalPengeluaranFilter = computed(() => filteredData.value.filter(d => d.jenis === 'Pengeluaran').reduce((a, b) => a + Number(b.nominal), 0));
+        const categoryTotalsPengeluaran = computed(() => { const t = {}; filteredData.value.filter(d => d.jenis === 'Pengeluaran').forEach(d => { t[d.kategori] = (t[d.kategori] || 0) + Number(d.nominal); }); return Object.fromEntries(Object.entries(t).sort(([,a],[,b]) => b-a)); });
+        const categoryTotalsPemasukan = computed(() => { const t = {}; filteredData.value.filter(d => d.jenis === 'Pemasukan').forEach(d => { t[d.kategori] = (t[d.kategori] || 0) + Number(d.nominal); }); return Object.fromEntries(Object.entries(t).sort(([,a],[,b]) => b-a)); });
+        const paymentTotals = computed(() => { const t = {}; filteredData.value.filter(d => d.jenis === 'Pengeluaran').forEach(d => { const m = d.metodePembayaran || 'Cash'; t[m] = (t[m] || 0) + Number(d.nominal); }); return t; });
+
+        const listTabungan = computed(() => dataTransaksi.value.filter(d => d.jenis === 'Tabungan').sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal)));
+        const totalTabungan = computed(() => listTabungan.value.reduce((a, b) => a + Number(b.nominal), 0));
+        const tabunganPerBulan = computed(() => { const groups = {}; const data = [...listTabungan.value].sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal)); data.forEach(d => { const month = new Date(d.tanggal).toLocaleString('id-ID', { month: 'short', year: 'numeric' }); groups[month] = (groups[month] || 0) + Number(d.nominal); }); return groups; });
+
+        const listCicilan = computed(() => filteredData.value.filter(d => d.metodePembayaran && d.metodePembayaran.includes('Kredit')).sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal)));
+        const totalHutangAktif = computed(() => listCicilan.value.filter(d => d.status === 'Belum Lunas').reduce((a,b) => a + (Number(b.nominal) - Number(b.terbayar)), 0));
+        const dKredivo = computed(() => listCicilan.value.filter(d => d.status === 'Belum Lunas' && d.metodePembayaran.includes('Kredivo')));
+        const hutangKredivoTotal = computed(() => dKredivo.value.reduce((a,b) => a + Number(b.nominal), 0));
+        const hutangKredivoSisa = computed(() => dKredivo.value.reduce((a,b) => a + (Number(b.nominal) - Number(b.terbayar)), 0));
+        const dSpaylater = computed(() => listCicilan.value.filter(d => d.status === 'Belum Lunas' && d.metodePembayaran.includes('SPaylater')));
+        const hutangSpaylaterTotal = computed(() => dSpaylater.value.reduce((a,b) => a + Number(b.nominal), 0));
+        const hutangSpaylaterSisa = computed(() => dSpaylater.value.reduce((a,b) => a + (Number(b.nominal) - Number(b.terbayar)), 0));
+        
+        const batasAmanKredit = computed(() => Number(simulasiGaji.value) * (Number(persentaseBatasAman.value)/100));
+        const sisaKuotaKredit = computed(() => batasAmanKredit.value - totalHutangAktif.value);
+
+        // ================= INTEGRASI SETTINGS (TARGET PERMANEN) =================
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_settings' }) });
+                const result = await res.json();
+                if(result.status === 'success') {
+                    targetTabungan.value = Number(result.data.target_tabungan || 0);
+                }
+            } catch (e) { console.error("Gagal memuat settings", e); }
+        };
+
+        const setTargetTabungan = async () => {
+            const input = prompt("Masukkan target tabungan Anda (Nominal Rp):", targetTabungan.value);
+            if (input !== null && !isNaN(input)) {
+                isLoading.value = true;
+                try {
+                    const res = await fetch(API_URL, { 
+                        method: 'POST', 
+                        body: JSON.stringify({ action: 'update_settings', key: 'target_tabungan', value: Number(input), token: localStorage.getItem('ff_token_tester') }) 
+                    });
+                    const result = await res.json();
+                    if(result.status === 'success') {
+                        targetTabungan.value = Number(input);
+                        showNotif("Target tabungan berhasil diperbarui permanen!", "success");
+                        if(activeTab.value === 'analisis') analisisDenganAI();
+                    }
+                } catch (e) { showNotif("Gagal sinkronisasi ke cloud", "error"); }
+                finally { isLoading.value = false; }
+            }
+        };
+
+        // ================= ALGORITMA ROBO-ADVISOR (Lokal) =================
+        const statusAnalisis = computed(() => {
+            const inc = totalPemasukanFilter.value || 0; const exp = totalPengeluaranFilter.value || 0; const debt = totalHutangAktif.value || 0;
+            let anjuran = []; let peringatan = []; let larangan = []; 
+            let statusKeseluruhan = 'Sehat & Optimal'; let bgClass = 'bg-blue-600'; let deskripsi = '';
+            
+            if (inc === 0 && exp === 0) return { statusKeseluruhan: 'Tidak Ada Data', anjuran, peringatan, larangan, deskripsi: 'Sistem belum menerima data transaksi yang cukup.', bgClass: 'bg-slate-700' };
+            
+            const rasioHutang = inc > 0 ? (debt / inc) * 100 : (debt > 0 ? 100 : 0);
+            const rasioPengeluaran = inc > 0 ? (exp / inc) * 100 : (exp > 0 ? 100 : 0);
+
+            if (exp > inc) {
+                statusKeseluruhan = 'Kritis (Defisit)'; bgClass = 'bg-rose-600';
+                deskripsi = `Pengeluaran (Rp ${formatRupiah(exp)}) lebih besar dari pendapatan.`;
+                peringatan.push("Negatif Cash Flow."); larangan.push("Dilarang ambil kredit baru."); anjuran.push("Evaluasi pengeluaran variabel segera.");
+            } else if (rasioHutang > 40) {
+                statusKeseluruhan = 'Beban Hutang Tinggi'; bgClass = 'bg-rose-600';
+                deskripsi = `Beban hutang Anda mencapai ${rasioHutang.toFixed(1)}% dari gaji.`;
+                peringatan.push("Risiko gagal bayar tinggi."); anjuran.push("Lakukan restrukturisasi hutang.");
+            } else if (rasioHutang > 30 || rasioPengeluaran > 70) {
+                statusKeseluruhan = 'Waspada'; bgClass = 'bg-amber-500';
+                deskripsi = `Arus kas mulai menyempit. Beban hutang/pengeluaran perlu dikontrol.`;
+                anjuran.push("Kurangi biaya konsumtif.");
+            } else {
+                statusKeseluruhan = 'Sehat & Optimal'; bgClass = 'bg-blue-600';
+                deskripsi = `Kesehatan finansial Anda prima dengan pengeluaran efisien.`;
+                anjuran.push("Alokasikan sisa kas ke investasi atau dana darurat.");
+            }
+            return { statusKeseluruhan, anjuran, peringatan, larangan, deskripsi, bgClass };
+        });
+
+        // ================= FUNGSI AI API (OTOMATIS) =================
+        const analisisDenganAI = async () => {
+            if(totalPemasukanFilter.value === 0 && totalPengeluaranFilter.value === 0) {
+                aiAnalysisResult.value = "<p>Data tidak memadai untuk dianalisis oleh AI.</p>";
+                return;
+            }
+
+            isAnalyzingAI.value = true;
+            aiAnalysisResult.value = '';
+
+            const summaryData = {
+                filterWaktu: filterWaktu.value,
+                inc: totalPemasukanFilter.value,
+                exp: totalPengeluaranFilter.value,
+                debt: totalHutangAktif.value,
+                kategori: categoryTotalsPengeluaran.value,
+                targetSaving: targetTabungan.value,
+                totalSaving: totalTabungan.value
+            };
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'analyze_ai', summaryData: summaryData })
+                });
+
+                const data = await res.json();
+                if(data.status === 'success') {
+                     aiAnalysisResult.value = data.data;
+                } else {
+                     aiAnalysisResult.value = "<p class='text-rose-500 font-bold'>Error AI: " + (data.message || "Gagal") + "</p>";
+                }
+            } catch(err) {
+                aiAnalysisResult.value = "<p class='text-rose-500 font-bold'>Koneksi gagal.</p>";
+            } finally {
+                isAnalyzingAI.value = false;
+            }
+        };
+
+        // ================= FUNGSI CRUD & UTILS =================
+        const formatRupiah = (val) => new Intl.NumberFormat('id-ID').format(val || 0);
+        const formatTanggalView = (isoString) => { if(!isoString) return '-'; return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(isoString)); };
+        const bukaDatabase = () => { window.open(SPREADSHEET_URL, '_blank'); };
+
+        const fetchData = async () => { 
+            try { 
+                const res = await fetch(API_URL); dataTransaksi.value = await res.json(); 
+                if(dataTransaksi.value.length > 0) {
+                    const dInc = dataTransaksi.value.filter(d => d.jenis === 'Pemasukan');
+                    if(dInc.length > 0) simulasiGaji.value = dInc.reduce((a,b) => a + Number(b.nominal), 0) / (dInc.length || 1);
+                }
+                await nextTick(); 
+                renderChartsForActiveTab(); 
+                if(modal.value.isOpen) refreshModalData(); 
+                if(activeTab.value === 'analisis' && !aiAnalysisResult.value) { analisisDenganAI(); }
+            } catch (e) { showNotif("Gagal ambil data", "error"); } 
+        };
+
+        const simpanData = async () => {
+            if(!form.value.nominal) return showNotif("Masukkan nominal!", 'error');
+            if(form.value.jenis === 'Tabungan') { form.value.kategori = 'Tabungan'; form.value.metodePembayaran = 'Cash'; } 
+            else {
+                if (kategoriDropdown.value !== 'Lainnya') form.value.kategori = kategoriDropdown.value;
+                else if (!form.value.kategori) return showNotif("Masukkan kategori manual!", 'error');
+            }
+
+            isLoading.value = true;
+            const payload = isEditing.value ? { action: 'update', id: editId.value, oldData: oldDataRef.value, data: form.value, token: localStorage.getItem('ff_token_tester') } : { action: 'create', data: form.value, token: localStorage.getItem('ff_token_tester') };
+            try { 
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                const result = await res.json();
+                if(result.status === 'success'){ 
+                    // Notifikasi sukses yang menyertakan nominal dan kategori!
+                    const detail = `<b>Rp ${formatRupiah(form.value.nominal)}</b> (${form.value.kategori})<br>Berhasil dicatat di sistem.`;
+                    showNotif("Transaksi Berhasil!", detail, 'success'); 
+                    resetForm(); await fetchData(); 
+                } 
+                else { showNotif("Gagal Disimpan", "Terjadi kesalahan server.", "error"); }
+            } catch (e) { showNotif("Timeout", "error"); } finally { isLoading.value = false; }
+        };
+
+        const editBatasAman = () => {
+            const newLimit = prompt("Atur persentase batas aman (1-100):", persentaseBatasAman.value);
+            if(newLimit && !isNaN(newLimit)) { persentaseBatasAman.value = Number(newLimit); localStorage.setItem('financeFlow_batasAman', newLimit); showNotif("Updated", "success"); }
+        };
+
+        const bukaModalBayar = (item) => { modalBayar.value.data = item; modalBayar.value.nominalInput = item.nominal - item.terbayar; modalBayar.value.isOpen = true; };
+        const prosesBayar = async () => {
+            const nominal = Number(modalBayar.value.nominalInput);
+            if(nominal <= 0) return showNotif("Nominal tidak valid!", "error");
+            isLoading.value = true;
+            try { 
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'pay', id: modalBayar.value.data.id, nominalBayar: nominal, token: localStorage.getItem('ff_token_tester') }) }); 
+                const result = await res.json();
+                if(result.status === 'success'){ showNotif(`Lunas!`, 'success'); modalBayar.value.isOpen = false; await fetchData(); } 
+                else { showNotif("Error", "error"); }
+            } catch (e) { showNotif("Error Server", "error"); } finally { isLoading.value = false; }
+        };
+
+        const setFilter = async (val) => { 
+            filterWaktu.value = val; 
+            await nextTick(); 
+            renderChartsForActiveTab(); 
+            if(activeTab.value === 'analisis') { analisisDenganAI(); }
+        };
+
+        const changeTab = async (tabName) => { 
+            activeTab.value = tabName; 
+            setTimeout(() => { 
+                renderChartsForActiveTab(); 
+                if(tabName === 'analisis' && !aiAnalysisResult.value) { analisisDenganAI(); }
+            }, 250); 
+        };
+
+        const siapkanEdit = (item) => { 
+            closeModal(); activeTab.value = 'dashboard'; isEditing.value = true; editId.value = item.id; oldDataRef.value = item; 
+            const d = new Date(item.tanggal); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); 
+            form.value = { tanggal: d.toISOString().slice(0, 16), jenis: item.jenis, kategori: item.kategori, nominal: item.nominal, keterangan: item.keterangan, metodePembayaran: item.metodePembayaran || 'Cash' }; 
+            if (item.jenis !== 'Tabungan') {
+                const listOpsi = item.jenis === 'Pemasukan' ? ['Pemasukan Utama', 'Pemasukan Sampingan'] : ['Makan', 'Minum', 'Transportasi', 'Listrik', 'Air', 'Cicilan Rumah', 'Cicilan Kendaraan'];
+                if (listOpsi.includes(item.kategori)) kategoriDropdown.value = item.kategori; else kategoriDropdown.value = 'Lainnya';
+                
+                // Deteksi metode custom
+                const listMetodeBaku = ['Cash', 'Transfer Bank', 'E-Wallet', 'Kredit Kredivo', 'Kredit SPaylater'];
+                if(listMetodeBaku.includes(item.metodePembayaran || 'Cash')) {
+                    metodeDropdown.value = item.metodePembayaran || 'Cash';
+                } else {
+                    metodeDropdown.value = 'Lainnya';
+                }
+            }
+            setTimeout(() => { document.getElementById('form-section').scrollIntoView({ behavior: 'smooth' }); }, 100); 
+        };
+
+        const batalEdit = () => { resetForm(); };
+        const hapusData = async (item) => { 
+            if(!confirm(`Hapus data?`)) return; 
+            isLoading.value = true; 
+            try { 
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: item.id, token: localStorage.getItem('ff_token_tester') }) }); 
+                const result = await res.json();
+                if(result.status === 'success'){ showNotif("Dihapus", 'success'); await fetchData(); } 
+            } catch (e) { showNotif("Gagal", "error"); } finally { isLoading.value = false; } 
+        };
+
+        const openModal = (type, title, jenis = 'Pengeluaran') => { modal.value.type = type; modal.value.title = title; modal.value.jenis = jenis; refreshModalData(); modal.value.isOpen = true; };
+        const refreshModalData = () => { let f = []; if(modal.value.type === 'category') f = filteredData.value.filter(d => d.jenis === modal.value.jenis && d.kategori === modal.value.title); modal.value.data = f.sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal)); };
+        const closeModal = () => { modal.value.isOpen = false; };
+
+        // ================= ENGINE CHART.JS (DESAIN MODERN) =================
+        // Mengatur font bawaan agar selaras dengan desain aplikasi
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#64748b';
+
+        // Desain Tooltip (Kotak Info saat grafik di-hover) bergaya modern
+        const modernTooltip = {
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            titleFont: { size: 13, weight: 'bold' },
+            bodyFont: { size: 14, weight: 'bold' },
+            padding: 12,
+            cornerRadius: 12,
+            displayColors: true,
+            boxPadding: 6,
+            callbacks: {
+                label: function(context) {
+                    let label = context.dataset.label || context.label || '';
+                    if (label) label += ': ';
+                    if (context.parsed.y !== null && context.parsed.y !== undefined) {
+                        label += 'Rp ' + new Intl.NumberFormat('id-ID').format(context.parsed.y);
+                    } else if (context.parsed !== null) {
+                        label += 'Rp ' + new Intl.NumberFormat('id-ID').format(context.parsed);
+                    }
+                    return label;
+                }
+            }
+        };
+
+        const renderChartsForActiveTab = () => {
+            if(activeTab.value === 'dashboard') { renderDashboardCharts(); } 
+            else if (activeTab.value === 'cicilan') { renderCicilanCharts(); }
+            else if (activeTab.value === 'tabungan') { renderTabunganCharts(); }
+            else if (activeTab.value === 'analisis') { renderAnalisisCharts(); }
+        };
+
+        const renderDashboardCharts = () => {
+            const ctx1 = document.getElementById('incomeExpenseChart'); 
+            if(ctx1) {
+                if (chartIncExp) chartIncExp.destroy();
+                const inc = totalPemasukanFilter.value; const exp = totalPengeluaranFilter.value; const hd = inc > 0 || exp > 0;
+                chartIncExp = new Chart(ctx1.getContext('2d'), { 
+                    type: 'doughnut', 
+                    data: { 
+                        labels: ['Pemasukan', 'Pengeluaran'], 
+                        datasets: [{ 
+                            data: hd ? [inc, exp] : [1, 1], 
+                            backgroundColor: hd ? ['#10b981', '#f43f5e'] : ['#f1f5f9', '#f1f5f9'], 
+                            borderWidth: 4, borderColor: '#ffffff', hoverOffset: 12, borderRadius: 20
+                        }] 
+                    }, 
+                    options: { 
+                        responsive: true, maintainAspectRatio: false, cutout: '75%',
+                        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }, datalabels: { display: false }, tooltip: modernTooltip },
+                        animation: { animateScale: true, animateRotate: true }
+                    } 
+                });
+            }
+            
+            const ctx2 = document.getElementById('dashboardPaymentDistChart');
+            if(ctx2) {
+                if (chartDist) chartDist.destroy();
+                
+                const labelsDist = Object.keys(paymentTotals.value);
+                const dataDist = Object.values(paymentTotals.value);
+                const hd = dataDist.some(v => v > 0);
+
+                // --- KAMUS WARNA DINAMIS ---
+                const colorMap = {
+                    'Cash': '#10b981',             // Hijau
+                    'Kredit Kredivo': '#3b82f6',   // Biru
+                    'Kredit SPaylater': '#ef4444', // Merah
+                    'E-Wallet': '#f59e0b',         // Kuning (Amber)
+                    'Transfer Bank': '#8b5cf6'     // Ungu
+                };
+                
+                // Warna cadangan jika user mengetik metode "Lainnya" yang tidak ada di daftar atas
+                const fallbackColors = ['#14b8a6', '#ec4899', '#64748b', '#06b6d4']; 
+                let fallbackIndex = 0;
+
+                const dynamicColors = labelsDist.map(label => {
+                    if (colorMap[label]) return colorMap[label];
+                    const color = fallbackColors[fallbackIndex % fallbackColors.length];
+                    fallbackIndex++;
+                    return color;
+                });
+
+                chartDist = new Chart(ctx2.getContext('2d'), { 
+                    type: 'doughnut', 
+                    data: { 
+                        labels: hd ? labelsDist : ['Belum Ada Data'], 
+                        datasets: [{ 
+                            data: hd ? dataDist : [1], 
+                            backgroundColor: hd ? dynamicColors : ['#f1f5f9'], 
+                            borderWidth: 4, borderColor: '#ffffff', hoverOffset: 12, borderRadius: 20
+                        }] 
+                    }, 
+                    options: { 
+                        responsive: true, maintainAspectRatio: false, cutout: '75%',
+                        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }, datalabels: { display: false }, tooltip: modernTooltip },
+                        animation: { animateScale: true, animateRotate: true }
+                    } 
+                });
+            }
+        };
+
+        const renderCicilanCharts = () => {
+            const ctx1 = document.getElementById('cicilanStatusChart');
+            if(ctx1) {
+                if(chartStatusCicilan) chartStatusCicilan.destroy();
+                const dibayar = listCicilan.value.filter(d => d.status === 'Belum Lunas').reduce((a,b) => a + Number(b.terbayar), 0);
+                const lunas = listCicilan.value.filter(d => d.status === 'Lunas').reduce((a,b) => a + Number(b.nominal), 0);
+                const totalTuntas = lunas + dibayar; const blm = totalHutangAktif.value; const hd = totalTuntas > 0 || blm > 0;
+                chartStatusCicilan = new Chart(ctx1.getContext('2d'), { 
+                    type: 'doughnut', 
+                    data: { 
+                        labels: ['Sudah Dibayar', 'Sisa Hutang'], 
+                        datasets: [{ 
+                            data: hd ? [totalTuntas, blm] : [1,1], 
+                            backgroundColor: hd ? ['#10b981', '#f43f5e'] : ['#f1f5f9', '#f1f5f9'], 
+                            borderWidth: 4, borderColor: '#ffffff', hoverOffset: 12, borderRadius: 20
+                        }] 
+                    }, 
+                    options: { 
+                        responsive: true, maintainAspectRatio: false, cutout: '75%', 
+                        plugins: { 
+                            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
+                            datalabels: { display: false },
+                            tooltip: modernTooltip
+                        }
+                    } 
+                });
+            }
+            const ctx2 = document.getElementById('cicilanTrendChart');
+            if(ctx2) {
+                if(chartTrendCicilan) chartTrendCicilan.destroy();
+                chartTrendCicilan = new Chart(ctx2.getContext('2d'), { 
+                    type: 'bar', 
+                    data: { 
+                        labels: ['Kredivo', 'SPaylater'], 
+                        datasets: [{ 
+                            label: 'Total Hutang Berjalan', 
+                            data: [hutangKredivoTotal.value, hutangSpaylaterTotal.value], 
+                            backgroundColor: ['#3b82f6', '#f97316'], 
+                            borderRadius: 8, barPercentage: 0.6
+                        }] 
+                    }, 
+                    options: { 
+                        responsive: true, maintainAspectRatio: false, 
+                        plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: modernTooltip },
+                        scales: { y: { grid: { display: false, drawBorder: false }, ticks: { display: false } }, x: { grid: { display: false, drawBorder: false } } },
+                        animation: { y: { duration: 1000, easing: 'easeOutQuart' } }
+                    } 
+                });
+            }
+        };
+
+        const renderTabunganCharts = () => {
+            const ctx = document.getElementById('tabunganChart');
+            if(ctx) {
+                if(chartTabunganIns) chartTabunganIns.destroy();
+                const labels = Object.keys(tabunganPerBulan.value); const data = Object.values(tabunganPerBulan.value);
+                
+                // Membuat efek gradasi modern di bawah garis
+                const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+                gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+                chartTabunganIns = new Chart(ctx.getContext('2d'), { 
+                    type: 'line', 
+                    data: { 
+                        labels: labels.length ? labels : ['Belum ada'], 
+                        datasets: [{ 
+                            label: 'Tabungan', 
+                            data: data.length ? data : [0], 
+                            borderColor: '#10b981', 
+                            backgroundColor: gradient, 
+                            borderWidth: 3, 
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#10b981',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            fill: true, 
+                            tension: 0.4 // Membuat garis melengkung dinamis
+                        }] 
+                    }, 
+                    options: { 
+                        responsive: true, maintainAspectRatio: false, 
+                        plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: modernTooltip }, 
+                        scales: { 
+                            y: { 
+                                beginAtZero: true, 
+                                grid: { color: '#f1f5f9', drawBorder: false }, border: { dash: [4, 4] },
+                                ticks: { callback: function(value) { return 'Rp ' + (value/1000) + 'k'; } }
+                            },
+                            x: { grid: { display: false, drawBorder: false } }
+                        },
+                        interaction: { intersect: false, mode: 'index' }
+                    } 
+                });
+            }
+        };
+
+        const renderAnalisisCharts = () => {
+            const ctx = document.getElementById('radarAnalysisChart');
+            if(ctx) {
+                if(chartRadar) chartRadar.destroy();
+                chartRadar = new Chart(ctx.getContext('2d'), { 
+                    type: 'bar', 
+                    data: { 
+                        labels: ['Pemasukan', 'Pengeluaran', 'Hutang Aktif'], 
+                        datasets: [{ 
+                            data: [totalPemasukanFilter.value, totalPengeluaranFilter.value, totalHutangAktif.value], 
+                            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], 
+                            borderRadius: 8, barPercentage: 0.5
+                        }] 
+                    }, 
+                    options: { 
+                        responsive: true, maintainAspectRatio: false, 
+                        plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: modernTooltip }, 
+                        scales: { y: { display: false }, x: { grid: { display: false, drawBorder: false } } },
+                        animation: { y: { duration: 1000, easing: 'easeOutQuart' } }
+                    } 
+                });
+            }
+        };
+
+        return { form, isLoading, filterWaktu, periods, activeTab, modal, modalBayar, isEditing, notif, showNotif, logout, totalPemasukanFilter, totalPengeluaranFilter, categoryTotalsPemasukan, categoryTotalsPengeluaran, paymentTotals, listCicilan, totalHutangAktif, hutangKredivoTotal, hutangKredivoSisa, hutangSpaylaterTotal, hutangSpaylaterSisa, simulasiGaji, batasAmanKredit, sisaKuotaKredit, persentaseBatasAman, listTabungan, totalTabungan, targetTabungan, setTargetTabungan, statusAnalisis, isAnalyzingAI, aiAnalysisResult, analisisDenganAI, simpanData, bukaModalBayar, prosesBayar, formatRupiah, formatTanggalView, setFilter, changeTab, openModal, closeModal, siapkanEdit, batalEdit, hapusData, editBatasAman, bukaDatabase, kategoriDropdown, listKategoriAktif, metodeDropdown, modalVoiceConfirm,
+    konfirmasiVoiceSimpan,
+    batalVoiceSimpan, mulaiSuara, modalFeedback, kirimFeedback };
     }
 }).mount('#app');
 </script>
