@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tester MyFinanceFlow - Dashboard AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        #ai-response-container { line-height: 1.5; color: #334155; }
+        #ai-response-container h3 { color: #1e40af; margin-top: 16px; margin-bottom: 8px; font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+        #ai-response-container p { margin-bottom: 12px; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        [v-cloak] { display: none; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .animate-danger-pulse { animation: customPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes customPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .9; transform: scale(1.02); box-shadow: 0 0 20px rgba(225, 29, 72, 0.4); } }
+        
+        .page-enter-active, .page-leave-active { transition: all 0.25s ease; }
+        .page-enter-from { opacity: 0; transform: translateY(15px); }
+        .page-leave-to { opacity: 0; transform: translateY(-15px); }
+        .modal-enter-active, .modal-leave-active { transition: opacity 0.2s ease; }
+        .modal-enter-from, .modal-leave-to { opacity: 0; }
+        
+        .toast-enter-active, .toast-leave-active { transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .toast-enter-from, .toast-leave-to { opacity: 0; transform: translate(-50%, -40%) scale(0.85); }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen pb-12 relative overflow-x-hidden">
+
+<div id="app" v-cloak class="max-w-[1400px] mx-auto p-4 md:p-6 space-y-6">
+    
+    <!-- NOTIFIKASI DI TENGAH LAYAR -->
+    <transition name="toast">
+        <div v-if="notif.show" 
+             class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] border border-slate-100 overflow-hidden flex flex-col min-w-[320px] max-w-sm transition-all"
+             :class="notif.type === 'success' ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-rose-500'">
+            <div class="p-4 flex items-start gap-4">
+                <div :class="notif.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'" class="p-2.5 rounded-full mt-0.5">
+                    <span class="text-lg leading-none block" v-if="notif.type === 'success'">✅</span>
+                    <span class="text-lg leading-none block" v-else>⚠️</span>
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-extrabold text-slate-800">{{ notif.title }}</h4>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed font-medium" v-html="notif.message"></p>
+                </div>
+            </div>
+            <div class="h-1.5 w-full bg-slate-100">
+                <div class="h-full transition-all ease-linear"
+                     :class="notif.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'"
+                     style="transition-duration: 3500ms;"
+                     :style="{ width: notif.progress + '%' }"></div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- NAVIGATION BAR -->
+    <nav class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col xl:flex-row justify-between items-center gap-4 hover:shadow-md mb-6 relative">
+        <!-- Badge Versi Tester -->
+        <div class="absolute -top-3 -right-2 bg-gradient-to-r from-orange-400 to-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md animate-pulse">TESTER VERSION</div>
+        
+        <div class="flex justify-between items-center w-full xl:w-auto gap-4">
+            <h1 class="text-2xl font-extrabold text-blue-600 tracking-tight">MyFinanceFlow</h1>
+        </div>
+        
+        <div class="flex flex-col md:flex-row gap-4 w-full xl:w-auto items-center">
+            <div class="flex bg-slate-100 p-1.5 rounded-2xl w-full md:w-auto overflow-x-auto relative">
+                <button @click="changeTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-white shadow-md text-blue-600 scale-105 z-10' : 'text-slate-500 hover:bg-slate-200'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap">📊 Dashboard</button>
+                <button @click="changeTab('analisis')" :class="activeTab === 'analisis' ? 'bg-white shadow-md text-indigo-600 scale-105 z-10' : 'text-slate-500 hover:bg-slate-200'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap">📈 Analisis AI</button>
+            </div>
+            
+            <div class="flex gap-2">
+                <!-- TOMBOL FEEDBACK BARU -->
+                <button @click="modalFeedback.isOpen = true" class="bg-amber-100 text-amber-600 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-amber-200 shadow-sm hover:-translate-y-1 transition-all">
+                    ⭐ Nilai App
+                </button>
+                <button @click="logout" class="bg-rose-100 text-rose-600 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-rose-200 shadow-sm hover:-translate-y-1 transition-all">
+                    Keluar
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- DASHBOARD TAB -->
+    <transition name="page" mode="out-in">
+        <div v-if="activeTab === 'dashboard'" key="dashboard" class="space-y-6">
+            <main class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                <!-- FORM INPUT -->
+                <section class="xl:col-span-4">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 relative">
+                        <div class="flex justify-between items-center mb-5 mt-2">
+                            <h2 class="text-lg font-bold flex items-center gap-2">
+                                <span class="w-2 h-6 rounded-full bg-blue-500"></span> Catat Transaksi
+                            </h2>
+                            <button type="button" @click="mulaiSuara" class="bg-indigo-100 text-indigo-600 p-2 rounded-full hover:bg-indigo-200 hover:scale-110 transition-all shadow-sm group">
+                                <svg class="w-5 h-5 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                            </button>
+                        </div>
+                        <form @submit.prevent="simpanData" class="space-y-4">
+                            <div class="flex gap-1.5 p-1 bg-slate-100 rounded-2xl relative">
+                                <button type="button" @click="form.jenis = 'Pengeluaran'" :class="form.jenis === 'Pengeluaran' ? 'bg-white shadow-md text-rose-600 scale-[1.02]' : 'text-slate-500 hover:bg-slate-200'" class="flex-1 py-2 rounded-xl text-xs font-bold uppercase transition-all">Keluar</button>
+                                <button type="button" @click="form.jenis = 'Pemasukan'" :class="form.jenis === 'Pemasukan' ? 'bg-white shadow-md text-emerald-600 scale-[1.02]' : 'text-slate-500 hover:bg-slate-200'" class="flex-1 py-2 rounded-xl text-xs font-bold uppercase transition-all">Masuk</button>
+                            </div>
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-slate-400 ml-2 tracking-widest">Nominal (Rp)</label>
+                                <input type="number" v-model="form.nominal" required class="w-full text-2xl font-bold px-4 py-3 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all border border-slate-100">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="col-span-2">
+                                    <label class="text-[10px] uppercase font-bold text-slate-400 ml-2 tracking-widest">Kategori</label>
+                                    <select v-model="kategoriDropdown" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold cursor-pointer focus:ring-2 focus:ring-blue-500 mb-2">
+                                        <option v-for="opt in listKategoriAktif" :key="opt" :value="opt">{{ opt }}</option>
+                                    </select>
+                                    <input v-if="kategoriDropdown === 'Lainnya'" type="text" v-model="form.kategori" required placeholder="Ketik manual..." class="w-full px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[10px] uppercase font-bold text-slate-400 ml-2 tracking-widest">Metode Pembayaran</label>
+                                    <select v-model="metodeDropdown" @change="metodeDropdown !== 'Lainnya' ? form.metodePembayaran = metodeDropdown : null" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold cursor-pointer focus:ring-2 focus:ring-blue-500 mb-2">
+                                        <option value="Cash">💵 Cash</option>
+                                        <option value="Transfer Bank">🏦 Transfer Bank</option>
+                                        <option value="E-Wallet">📱 E-Wallet (QRIS/Dana/dll)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" :disabled="isLoading" class="w-full bg-blue-600 text-white font-extrabold py-4 rounded-2xl flex justify-center items-center gap-2 shadow-lg hover:-translate-y-1 transition-all">
+                                <span v-if="isLoading" class="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+                                {{ isLoading ? 'Memproses Data...' : 'Simpan Transaksi' }}
+                            </button>
+                        </form>
+                    </div>
+                </section>
+                
+                <!-- SUMMARY AREA -->
+                <section class="xl:col-span-8 space-y-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                        <h3 class="text-sm font-bold text-slate-800 border-b pb-3 mb-4">Riwayat Terakhir</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm min-w-[600px]">
+                                <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                                    <tr><th class="px-4 py-3">Waktu</th><th class="px-4 py-3">Jenis</th><th class="px-4 py-3">Kategori</th><th class="px-4 py-3 text-right">Nominal</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr v-for="(item, idx) in recentData" :key="idx" class="hover:bg-slate-50 transition-colors">
+                                        <td class="px-4 py-3 text-slate-500 text-xs">{{ formatTanggalView(item.tanggal) }}</td>
+                                        <td class="px-4 py-3 font-bold" :class="item.jenis === 'Pemasukan' ? 'text-emerald-600' : 'text-rose-600'">{{ item.jenis }}</td>
+                                        <td class="px-4 py-3 text-slate-600 font-medium">{{ item.kategori }}</td>
+                                        <td class="px-4 py-3 text-right font-bold text-slate-700">Rp {{ formatRupiah(item.nominal) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+        
+        <!-- ANALISIS AI TAB -->
+        <div v-else-if="activeTab === 'analisis'" key="analisis" class="space-y-6">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border-t-4 border-t-indigo-600 text-center text-slate-600 font-bold">
+                 Tombol AI dinonaktifkan di versi tester untuk menghemat kuota percobaan.
+            </div>
+        </div>
+    </transition>
+
+    <!-- MODAL KONFIRMASI VOICE NOTE -->
+    <transition name="modal">
+        <div v-if="modalVoiceConfirm.isOpen" class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" @click="batalVoiceSimpan"></div>
+            <div class="relative bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden transform transition-all scale-100">
+                <div class="bg-gradient-to-br from-indigo-500 to-blue-600 p-6 text-center relative overflow-hidden">
+                    <h2 class="text-xl font-extrabold text-white mt-2 relative z-10">Konfirmasi Suara AI</h2>
+                </div>
+                <div class="p-6 bg-white space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-200/60"><span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Jenis</span><span class="text-xs font-extrabold text-slate-700">{{ modalVoiceConfirm.data.jenis }}</span></div>
+                        <div class="flex justify-between items-center py-2 border-b border-slate-200/60"><span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Nominal</span><span class="text-xl font-black text-slate-800">Rp {{ formatRupiah(modalVoiceConfirm.data.nominal) }}</span></div>
+                        <div class="flex justify-between items-center py-2 border-b border-slate-200/60"><span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Kategori</span><span class="text-sm font-bold text-slate-700">{{ modalVoiceConfirm.kategoriDisplay }}</span></div>
+                        <div class="flex justify-between items-center pt-2"><span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Metode</span><span class="text-sm font-bold text-slate-700">{{ modalVoiceConfirm.metode }}</span></div>
+                    </div>
+                </div>
+                <div class="p-5 bg-slate-50 flex gap-3">
+                    <button @click="batalVoiceSimpan" class="w-1/3 bg-white text-slate-600 border border-slate-200 font-bold py-3.5 rounded-xl shadow-sm text-xs uppercase">Batal</button>
+                    <button @click="konfirmasiVoiceSimpan" :disabled="isLoading" class="w-2/3 bg-indigo-600 text-white font-extrabold py-3.5 rounded-xl shadow-md text-sm uppercase">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <!-- MODAL FEEDBACK / RATING -->
+    <transition name="modal">
+        <div v-if="modalFeedback.isOpen" class="fixed inset-0 z-[140] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="modalFeedback.isOpen = false"></div>
+            <div class="relative bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center transform transition-all scale-100">
+                <h2 class="text-xl font-bold text-slate-800 mb-2">Bagaimana Pengalaman Anda?</h2>
+                <p class="text-xs text-slate-500 mb-6 font-medium">Bantu kami mengembangkan fitur AI yang lebih cerdas.</p>
+                
+                <!-- Bintang Rating -->
+                <div class="flex justify-center gap-2 mb-6 flex-row-reverse">
+                    <button v-for="star in [5,4,3,2,1]" :key="star" @click="modalFeedback.rating = star"
+                            class="text-4xl transition-all duration-200 hover:scale-125"
+                            :class="modalFeedback.rating >= star ? 'text-amber-400 grayscale-0 drop-shadow-md' : 'text-slate-200 grayscale'">
+                        ⭐
+                    </button>
+                </div>
+                
+                <textarea v-model="modalFeedback.komentar" rows="3" placeholder="Tuliskan pendapat, kritik, atau error yang ditemukan..." class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white mb-4 transition-colors"></textarea>
+                
+                <button @click="kirimFeedback" :disabled="isLoading" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 transition-all shadow-md flex justify-center items-center gap-2">
+                    <span v-if="isLoading" class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+                    Kirim Penilaian
+                </button>
+            </div>
+        </div>
+    </transition>
+
+</div>
+
+<script>
+const { createApp, ref, onMounted, computed } = Vue;
+
+const getCurrentDateTimeLocal = () => {
+    const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
+};
+
+createApp({
+    setup() {
+        // GANTI INI DENGAN URL DEPLOYMENT BARU ANDA
+        const API_URL = "https://script.google.com/macros/s/AKfycb.../exec"; 
+        
+        onMounted(() => { fetchData(); }); // Tidak blokir tanpa token untuk mempermudah Tester
+
+        const notif = ref({ show: false, title: '', message: '', type: 'success', progress: 100 });
+        const showNotif = (title, msg, type = 'success') => {
+            notif.value = { show: true, title: title, message: msg, type: type, progress: 100 };
+            setTimeout(() => { notif.value.progress = 0; }, 50);
+            setTimeout(() => { notif.value.show = false; }, 3500);
+        };
+
+        const activeTab = ref('dashboard');
+        const dataTransaksi = ref([]);
+        const isLoading = ref(false);
+        const form = ref({ tanggal: getCurrentDateTimeLocal(), jenis: 'Pengeluaran', kategori: '', keterangan: '', metodePembayaran: 'Cash', nominal: '' });
+        const kategoriDropdown = ref('Makan');
+        const metodeDropdown = ref('Cash');
+
+        const listKategoriAktif = computed(() => form.value.jenis === 'Pemasukan' ? ['Pemasukan Utama', 'Pemasukan Sampingan', 'Lainnya'] : ['Makan', 'Minum', 'Transportasi', 'Lainnya']);
+        const recentData = computed(() => dataTransaksi.value.slice(0, 5));
+
+        const modalVoiceConfirm = ref({ isOpen: false, data: null, metode: '', kategoriDisplay: '', originalText: '' });
+        
+        // --- LOGIKA FEEDBACK ---
+        const modalFeedback = ref({ isOpen: false, rating: 0, komentar: '' });
+        const kirimFeedback = async () => {
+            if (modalFeedback.value.rating === 0) return showNotif("Peringatan", "Pilih bintang rating terlebih dahulu!", "error");
+            isLoading.value = true;
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'submit_feedback', 
+                        rating: modalFeedback.value.rating, 
+                        komentar: modalFeedback.value.komentar,
+                        token: localStorage.getItem('ff_token') || 'Tester'
+                    })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    showNotif("Terima Kasih!", "Penilaian Anda sangat berarti bagi kami.", "success");
+                    modalFeedback.value = { isOpen: false, rating: 0, komentar: '' };
+                }
+            } catch (e) {
+                showNotif("Gagal", "Gagal mengirim penilaian.", "error");
+            } finally {
+                isLoading.value = false;
+            }
+        };
+
+        // --- FUNGSI UTAMA LAINNYA ---
+        const formatRupiah = (val) => new Intl.NumberFormat('id-ID').format(val || 0);
+        const formatTanggalView = (iso) => new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit'}).format(new Date(iso));
+        const changeTab = (tab) => { activeTab.value = tab; };
+        const logout = () => { window.location.href = 'index.html'; };
+
+        const fetchData = async () => { 
+            try { const res = await fetch(API_URL); dataTransaksi.value = (await res.json()).reverse(); } catch (e) { } 
+        };
+
+        const simpanData = async () => {
+            if(!form.value.nominal) return showNotif("Error", "Nominal wajib diisi", "error");
+            form.value.kategori = kategoriDropdown.value !== 'Lainnya' ? kategoriDropdown.value : form.value.kategori;
+            form.value.metodePembayaran = metodeDropdown.value !== 'Lainnya' ? metodeDropdown.value : form.value.metodePembayaran;
+            
+            isLoading.value = true;
+            try { 
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'create', data: form.value, token: 'Tester' }) }); 
+                const result = await res.json();
+                if(result.status === 'success'){ 
+                    showNotif("Transaksi Tersimpan!", `<b>Rp ${formatRupiah(form.value.nominal)}</b> (${form.value.kategori})`, 'success'); 
+                    form.value.nominal = ''; fetchData(); 
+                } 
+            } catch (e) { showNotif("Timeout", "Server sibuk", "error"); } finally { isLoading.value = false; }
+        };
+
+        const mulaiSuara = () => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return showNotif("Error", "Browser tidak support.", "error");
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'id-ID';
+            recognition.start();
+            showNotif("Mendengarkan...", "Silakan bicara sekarang", "success");
+
+            recognition.onresult = async (event) => {
+                const teks = event.results[0][0].transcript;
+                showNotif("Memproses AI...", "Groq sedang bekerja", "success");
+                try {
+                    isLoading.value = true;
+                    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'parse_voice', text: teks, currentDate: getCurrentDateTimeLocal(), token: 'Tester' }) });
+                    const result = await res.json();
+                    
+                    if (result.status === 'success') {
+                        const ai = result.data;
+                        form.value.jenis = ai.jenis; form.value.nominal = ai.nominal; form.value.keterangan = "Voice: " + teks; form.value.tanggal = ai.tanggal || getCurrentDateTimeLocal();
+                        kategoriDropdown.value = ai.kategori; metodeDropdown.value = ai.metode;
+
+                        modalVoiceConfirm.value = { isOpen: true, data: { ...form.value }, metode: ai.metode, kategoriDisplay: ai.kategori, originalText: teks };
+                    } else showNotif("AI Bingung", "Silakan ulangi kalimat.", "error");
+                } catch (e) { showNotif("Koneksi Error", "AI server sibuk.", "error"); } finally { isLoading.value = false; }
+            };
+        };
+
+        const konfirmasiVoiceSimpan = async () => { modalVoiceConfirm.value.isOpen = false; await simpanData(); };
+        const batalVoiceSimpan = () => { modalVoiceConfirm.value.isOpen = false; showNotif("Dibatalkan", "Edit manual diaktifkan.", "success"); };
+
+        return { form, isLoading, activeTab, notif, showNotif, logout, formatRupiah, formatTanggalView, changeTab, simpanData, mulaiSuara, kategoriDropdown, listKategoriAktif, metodeDropdown, modalVoiceConfirm, konfirmasiVoiceSimpan, batalVoiceSimpan, recentData, modalFeedback, kirimFeedback };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
